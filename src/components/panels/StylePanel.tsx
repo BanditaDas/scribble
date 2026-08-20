@@ -36,23 +36,23 @@ export const StylePanel = () => {
   ];
 
   return (
-    <div className="absolute right-6 top-24 w-64 bg-white rounded-xl shadow-lg border border-gray-200 p-4 pointer-events-auto z-10">
-      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4 jetbrains-mono">Properties</h3>
+    <div className="absolute right-6 top-24 w-64 bg-white dark:bg-zinc-800 rounded-xl shadow-lg border border-gray-200 dark:border-zinc-700 p-4 pointer-events-auto z-10 transition-colors">
+      <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 jetbrains-mono">Properties</h3>
       
       <div className="space-y-4">
         {selectedShape.type === 'text' && (
           <>
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Text</label>
+              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Text</label>
               <input
                 type="text"
                 value={selectedShape.text || ''}
                 onChange={handleTextChange}
-                className="w-full px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:border-[#FF5A36] focus:ring-1 focus:ring-[#FF5A36]"
+                className="w-full px-2 py-1 border border-gray-200 dark:border-zinc-600 rounded text-sm focus:outline-none focus:border-[#FF5A36] focus:ring-1 focus:ring-[#FF5A36] dark:bg-zinc-900 dark:text-gray-100 transition-colors"
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Font Size: {selectedShape.fontSize}px</label>
+              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Font Size: {selectedShape.fontSize}px</label>
               <input
                 type="range"
                 min="10"
@@ -66,12 +66,12 @@ export const StylePanel = () => {
         )}
 
         <div>
-          <label className="block text-sm text-gray-700 mb-1">Stroke</label>
+          <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Stroke</label>
           <div className="flex flex-wrap gap-2">
             {colors.map((c) => (
               <button
                 key={`stroke-${c}`}
-                className={`w-6 h-6 rounded-full border ${selectedShape.stroke === c ? 'ring-2 ring-offset-1 ring-[#FF5A36]' : 'border-gray-200'}`}
+                className={`w-6 h-6 rounded-full border ${selectedShape.stroke === c ? 'ring-2 ring-offset-1 dark:ring-offset-zinc-800 ring-[#FF5A36]' : 'border-gray-200 dark:border-zinc-600'} transition-all`}
                 style={{ backgroundColor: c === 'transparent' ? '#fff' : c, backgroundImage: c === 'transparent' ? 'linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc), linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc)' : 'none', backgroundPosition: '0 0, 4px 4px', backgroundSize: '8px 8px' }}
                 onClick={() => handleColorChange('stroke', c)}
                 title={c}
@@ -82,12 +82,12 @@ export const StylePanel = () => {
 
         {selectedShape.type !== 'line' && selectedShape.type !== 'arrow' && selectedShape.type !== 'pen' && (
           <div>
-            <label className="block text-sm text-gray-700 mb-1">Fill</label>
+            <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Fill</label>
             <div className="flex flex-wrap gap-2">
               {colors.map((c) => (
                 <button
                   key={`fill-${c}`}
-                  className={`w-6 h-6 rounded-full border ${selectedShape.fill === c ? 'ring-2 ring-offset-1 ring-[#FF5A36]' : 'border-gray-200'}`}
+                  className={`w-6 h-6 rounded-full border ${selectedShape.fill === c ? 'ring-2 ring-offset-1 dark:ring-offset-zinc-800 ring-[#FF5A36]' : 'border-gray-200 dark:border-zinc-600'} transition-all`}
                   style={{ backgroundColor: c === 'transparent' ? '#fff' : c, backgroundImage: c === 'transparent' ? 'linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc), linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc)' : 'none', backgroundPosition: '0 0, 4px 4px', backgroundSize: '8px 8px' }}
                   onClick={() => handleColorChange('fill', c)}
                   title={c}
@@ -99,7 +99,7 @@ export const StylePanel = () => {
 
         {selectedShape.type !== 'text' && (
           <div>
-            <label className="block text-sm text-gray-700 mb-1">Stroke Width: {selectedShape.strokeWidth}px</label>
+            <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Stroke Width: {selectedShape.strokeWidth}px</label>
             <input
               type="range"
               min="1"

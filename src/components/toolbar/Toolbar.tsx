@@ -30,10 +30,10 @@ export const Toolbar = () => {
 
   return (
     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-      <div className="flex items-center gap-1 bg-white shadow-lg shadow-black/5 rounded-full px-3 py-2 border border-gray-200 pointer-events-auto">
+      <div className="flex items-center gap-1 bg-white dark:bg-zinc-800 shadow-lg shadow-black/5 dark:shadow-black/20 rounded-full px-3 py-2 border border-gray-200 dark:border-zinc-700 pointer-events-auto transition-colors">
         {tools.map((tool, index) => {
           if (tool.id.startsWith('divider')) {
-            return <div key={tool.id} className="w-[1px] h-6 bg-gray-200 mx-1" />;
+            return <div key={tool.id} className="w-[1px] h-6 bg-gray-200 dark:bg-zinc-700 mx-1 transition-colors" />;
           }
           return (
             <IconButton

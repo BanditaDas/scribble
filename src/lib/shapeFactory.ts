@@ -1,6 +1,10 @@
-import { DEFAULT_PROPS } from './constants';
+import { DEFAULT_PROPS, COLORS } from './constants';
+import { useCanvasStore } from '../store/canvasStore';
 
 export const createShape = (type: string, x: number, y: number) => {
+  const theme = useCanvasStore.getState().theme;
+  const defaultStroke = theme === 'dark' ? COLORS.white : COLORS.graphite;
+
   return {
     id: crypto.randomUUID(),
     type,
@@ -8,7 +12,7 @@ export const createShape = (type: string, x: number, y: number) => {
     y,
     width: type === 'line' || type === 'arrow' || type === 'pen' ? undefined : 0,
     height: type === 'line' || type === 'arrow' || type === 'pen' ? undefined : 0,
-    stroke: DEFAULT_PROPS.stroke,
+    stroke: defaultStroke,
     fill: DEFAULT_PROPS.fill,
     strokeWidth: DEFAULT_PROPS.strokeWidth,
     points: type === 'line' || type === 'arrow' || type === 'pen' ? [x, y, x, y] : undefined,

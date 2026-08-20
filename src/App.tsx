@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React from 'react';
 import { Header } from './components/header/Header';
 import { Toolbar } from './components/toolbar/Toolbar';
@@ -17,7 +12,7 @@ export default function App() {
   useKeyboardShortcuts();
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-[#F3F4F6]">
+    <div className="relative w-screen h-screen overflow-hidden transition-colors duration-200">
       <GridBackground />
       <Header />
       <Canvas />
