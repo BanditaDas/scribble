@@ -40,7 +40,7 @@ export const Header = () => {
             label="Toggle Dark Mode"
             onClick={toggleTheme}
           />
-          <div className="w-[1px] h-4 bg-gray-200 dark:bg-zinc-700 mx-1 transition-colors" />
+          <div className="w-px h-4 bg-gray-200 dark:bg-zinc-700 mx-1 transition-colors" />
           <IconButton
             icon={<Undo2 size={18} />}
             label="Undo (Ctrl+Z)"
@@ -64,7 +64,7 @@ export const Header = () => {
             onClick={clearCanvas}
             className="hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
           />
-          <div className="w-[1px] h-4 bg-gray-200 dark:bg-zinc-700 mx-1 transition-colors" />
+          <div className="w-px h-4 bg-gray-200 dark:bg-zinc-700 mx-1 transition-colors" />
           <IconButton
             icon={<Download size={18} />}
             label="Export PNG"
