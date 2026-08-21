@@ -8,8 +8,8 @@ export const createShape = (type: string, x: number, y: number) => {
   return {
     id: crypto.randomUUID(),
     type,
-    x,
-    y,
+    x: type === 'line' || type === 'arrow' || type === 'pen' ? 0 : x,
+    y: type === 'line' || type === 'arrow' || type === 'pen' ? 0 : y,
     width: type === 'line' || type === 'arrow' || type === 'pen' ? undefined : 0,
     height: type === 'line' || type === 'arrow' || type === 'pen' ? undefined : 0,
     stroke: defaultStroke,
