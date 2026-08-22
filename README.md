@@ -1,20 +1,56 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Scribble 🎨
 
-# Run and deploy your AI Studio app
+> A browser-based, Figma-lite collaborative whiteboard / design tool.
 
-This contains everything you need to run your app locally.
+🚧 **Status: In Progress** — this project is currently being built. 
 
-View your app in AI Studio: https://ai.studio/apps/8f5ccc1a-fddd-45b1-8b12-5f027f736776
+---
 
-## Run Locally
+## About
 
-**Prerequisites:**  Node.js
+Scribble lets users draw shapes, add text, create simple diagrams, move and transform elements, undo/redo changes, save their work locally, and export the canvas as a PNG — all in the browser, no backend required.
 
+This is a frontend-only project by design: no server, no auth, no real-time multi-user sync. The focus is on interactions, state management, and UI architecture rather than just building static pages.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Planned Features
+
+- 🖊️ Draw shapes: rectangle, ellipse, line, arrow, freehand pen, text
+- 🎯 Select, move, resize, and rotate elements
+- 🎨 Style controls: stroke color, fill, stroke width, font
+- ↩️ Undo / redo
+- 💾 Auto-save to localStorage (persists between sessions)
+- 📤 Export canvas as PNG
+- 🧹 Clear canvas
+
+## Tech Stack
+
+- **Framework:** React (Vite)
+- **Styling:** Tailwind CSS
+- **Canvas engine:** react-konva (Konva.js)
+- **State persistence:** Browser localStorage
+- **Icons:** lucide-react
+- **Fonts:** Inter + JetBrains Mono
+- **Deployment:** Vercel
+
+## Design Direction
+
+- Neutral graphite/fog palette with a single signal-orange (`#FF5A36`) accent
+- Floating, rounded toolbar over a dot-grid canvas background
+- Minimal, modern, developer-tool aesthetic
+
+## Getting Started
+
+```bash
+# coming soon — setup instructions will be added once the initial build is ready
+```
+
+## Roadmap
+
+- [ ] Canvas foundation (Konva stage, dot-grid background)
+- [ ] Full toolset (shapes, selection, transform)
+- [ ] Undo/redo + localStorage persistence
+- [ ] PNG export + UI polish
+
+---
+
+*More to come as this builds out — follow along on [LinkedIn](https://www.linkedin.com/in/banditadas-dev/).*
