@@ -5,11 +5,13 @@ import { TOOLS } from '../../lib/constants';
 import { createShape } from '../../lib/shapeFactory';
 import { ShapeRenderer } from './ShapeRenderer';
 import { SelectionBox } from './SelectionBox';
+import { LineSelectionBox } from './LineSelectionBox';
 
 export const Canvas = () => {
   const shapes = useCanvasStore((state) => state.shapes);
   const activeTool = useCanvasStore((state) => state.activeTool);
   const selectedId = useCanvasStore((state) => state.selectedId);
+  const theme = useCanvasStore((state) => state.theme);
   const addShape = useCanvasStore((state) => state.addShape);
   const updateShape = useCanvasStore((state) => state.updateShape);
   const setSelectedId = useCanvasStore((state) => state.setSelectedId);
@@ -54,7 +56,8 @@ export const Canvas = () => {
 
     const stage = e.target.getStage();
     const pos = stage.getPointerPosition();
-    const currentShape = shapes.find(s => s.id === currentShapeId.current);
+    const currentShapes = useCanvasStore.getState().shapes;
+    const currentShape = currentShapes.find(s => s.id === currentShapeId.current);
     
     if (!currentShape) return;
 
@@ -103,7 +106,16 @@ export const Canvas = () => {
             onChange={(newAttrs) => updateShape(shape.id, newAttrs)}
           />
         ))}
-        {selectedId && <SelectionBox selectedId={selectedId} />}
+        {selectedId && !isDrawing && !['line', 'arrow', 'pen'].includes(shapes.find(s => s.id === selectedId)?.type || '') && (
+          <SelectionBox selectedId={selectedId} />
+        )}
+        {selectedId && !isDrawing && ['line', 'arrow'].includes(shapes.find(s => s.id === selectedId)?.type || '') && (
+          <LineSelectionBox 
+            shape={shapes.find(s => s.id === selectedId)!} 
+            theme={theme}
+            onChange={(newAttrs) => updateShape(selectedId, newAttrs)} 
+          />
+        )}
       </Layer>
     </Stage>
   );
