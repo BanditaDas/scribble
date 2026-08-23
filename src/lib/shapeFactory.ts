@@ -16,7 +16,7 @@ export const createShape = (type: string, x: number, y: number) => {
     fill: DEFAULT_PROPS.fill,
     strokeWidth: DEFAULT_PROPS.strokeWidth,
     points: type === 'line' || type === 'arrow' || type === 'pen' ? [x, y, x, y] : undefined,
-    text: type === 'text' ? 'Text' : undefined,
+    text: type === 'text' ? '' : undefined,
     fontSize: type === 'text' ? DEFAULT_PROPS.fontSize : undefined,
     fontFamily: type === 'text' ? DEFAULT_PROPS.fontFamily : undefined,
     rotation: 0,

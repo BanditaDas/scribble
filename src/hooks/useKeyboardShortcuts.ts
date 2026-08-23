@@ -22,6 +22,16 @@ export const useKeyboardShortcuts = () => {
         }
       }
 
+      if (e.key === 'Enter' && selectedId) {
+        const shapes = useCanvasStore.getState().shapes;
+        const selectedShape = shapes.find((s) => s.id === selectedId);
+        if (selectedShape?.type === 'text') {
+          useCanvasStore.getState().setEditingTextId(selectedId);
+          e.preventDefault();
+          return;
+        }
+      }
+
       if (e.key === 'Escape') {
         setSelectedId(null);
         setActiveTool(TOOLS.SELECT);

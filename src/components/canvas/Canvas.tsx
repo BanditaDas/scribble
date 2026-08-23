@@ -17,6 +17,7 @@ export const Canvas = () => {
   const theme = useCanvasStore((state) => state.theme);
   const addShape = useCanvasStore((state) => state.addShape);
   const updateShape = useCanvasStore((state) => state.updateShape);
+  const deleteShape = useCanvasStore((state) => state.deleteShape);
   const setSelectedId = useCanvasStore((state) => state.setSelectedId);
   
   const [isDrawing, setIsDrawing] = useState(false);
@@ -138,15 +139,30 @@ export const Canvas = () => {
       {editingShape && editingShape.type === 'text' && (
         <textarea
           value={editingShape.text || ''}
+          placeholder="Type something..."
           onChange={(e) => updateShape(editingShape.id, { text: e.target.value })}
-          onBlur={() => setEditingTextId(null)}
+          onBlur={() => {
+            setEditingTextId(null);
+            if (!editingShape.text || editingShape.text.trim() === '') {
+              deleteShape(editingShape.id);
+            }
+          }}
           onKeyDown={(e) => {
-            if (e.key === 'Escape') setEditingTextId(null);
+            if (e.key === 'Escape') {
+              setEditingTextId(null);
+              if (!editingShape.text || editingShape.text.trim() === '') {
+                deleteShape(editingShape.id);
+              }
+            }
             e.stopPropagation();
           }}
           autoFocus
-          onFocus={(e) => e.target.select()}
-          className="absolute z-10 bg-transparent outline-none resize-none overflow-hidden whitespace-pre pointer-events-auto"
+          onFocus={(e) => {
+            const val = e.target.value;
+            e.target.value = '';
+            e.target.value = val;
+          }}
+          className="absolute z-10 bg-transparent outline-none resize-none overflow-hidden whitespace-pre pointer-events-auto placeholder-gray-400 dark:placeholder-gray-500"
           style={{
             top: editingShape.y + 5,
             left: editingShape.x + 5,
@@ -154,7 +170,7 @@ export const Canvas = () => {
             fontFamily: editingShape.fontFamily,
             color: editingShape.stroke,
             lineHeight: 1,
-            width: `${Math.max(100, (editingShape.text || '').length * (editingShape.fontSize || 20) * 0.6)}px`,
+            width: `${Math.max(150, (editingShape.text || '').length * (editingShape.fontSize || 20) * 0.6)}px`,
             minHeight: `${(editingShape.fontSize || 20) * 1.5}px`
           }}
         />
