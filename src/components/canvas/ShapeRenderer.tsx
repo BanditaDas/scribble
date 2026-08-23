@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Rect, Ellipse, Line, Arrow, Text } from 'react-konva';
-import { Shape } from '../../store/canvasStore';
+import { Shape, useCanvasStore } from '../../store/canvasStore';
 
 interface ShapeRendererProps {
   shape: Shape;
@@ -11,6 +11,7 @@ interface ShapeRendererProps {
 
 export const ShapeRenderer = ({ shape, isSelected, onSelect, onChange }: ShapeRendererProps) => {
   const shapeRef = useRef<any>(null);
+  const isEditing = useCanvasStore((state) => state.editingTextId === shape.id);
 
   const commonProps = {
     id: shape.id,
@@ -23,8 +24,19 @@ export const ShapeRenderer = ({ shape, isSelected, onSelect, onChange }: ShapeRe
     draggable: isSelected,
     onClick: onSelect,
     onTap: onSelect,
+    onDblClick: () => {
+      if (shape.type === 'text') {
+        useCanvasStore.getState().setEditingTextId(shape.id);
+      }
+    },
+    onDblTap: () => {
+      if (shape.type === 'text') {
+        useCanvasStore.getState().setEditingTextId(shape.id);
+      }
+    },
     onDragEnd: (e: any) => {
       onChange({
+        ...shape,
         x: e.target.x(),
         y: e.target.y(),
       });
@@ -36,13 +48,27 @@ export const ShapeRenderer = ({ shape, isSelected, onSelect, onChange }: ShapeRe
       node.scaleX(1);
       node.scaleY(1);
       
-      onChange({
-        x: node.x(),
-        y: node.y(),
-        rotation: node.rotation(),
-        width: Math.max(5, (shape.width || 0) * scaleX),
-        height: Math.max(5, (shape.height || 0) * scaleY),
-      });
+      if (shape.type === 'line' || shape.type === 'arrow' || shape.type === 'pen') {
+        const scaledPoints = (shape.points || []).map((p, index) => {
+          return index % 2 === 0 ? p * scaleX : p * scaleY;
+        });
+        onChange({
+          ...shape,
+          x: node.x(),
+          y: node.y(),
+          rotation: node.rotation(),
+          points: scaledPoints,
+        });
+      } else {
+        onChange({
+          ...shape,
+          x: node.x(),
+          y: node.y(),
+          rotation: node.rotation(),
+          width: Math.max(5, (shape.width || 0) * scaleX),
+          height: Math.max(5, (shape.height || 0) * scaleY),
+        });
+      }
     },
   };
 
@@ -86,7 +112,7 @@ export const ShapeRenderer = ({ shape, isSelected, onSelect, onChange }: ShapeRe
           pointerLength={10}
           pointerWidth={10}
         />
-      );
+      );  
     case 'text':
       return (
         <Text
@@ -96,6 +122,7 @@ export const ShapeRenderer = ({ shape, isSelected, onSelect, onChange }: ShapeRe
           fontSize={shape.fontSize}
           fontFamily={shape.fontFamily}
           padding={5}
+          visible={!isEditing}
         />
       );
     default:

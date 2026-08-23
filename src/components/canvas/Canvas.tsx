@@ -11,6 +11,9 @@ export const Canvas = () => {
   const shapes = useCanvasStore((state) => state.shapes);
   const activeTool = useCanvasStore((state) => state.activeTool);
   const selectedId = useCanvasStore((state) => state.selectedId);
+  const editingTextId = useCanvasStore((state) => state.editingTextId);
+  const setEditingTextId = useCanvasStore((state) => state.setEditingTextId);
+  const setActiveTool = useCanvasStore((state) => state.setActiveTool);
   const theme = useCanvasStore((state) => state.theme);
   const addShape = useCanvasStore((state) => state.addShape);
   const updateShape = useCanvasStore((state) => state.updateShape);
@@ -33,6 +36,10 @@ export const Canvas = () => {
   }, []);
 
   const handleMouseDown = (e: any) => {
+    if (editingTextId) {
+      setEditingTextId(null);
+    }
+
     const clickedOnEmpty = e.target === e.target.getStage();
     if (clickedOnEmpty) {
       setSelectedId(null);
@@ -45,6 +52,13 @@ export const Canvas = () => {
     const pos = e.target.getStage().getPointerPosition();
     const newShape = createShape(activeTool, pos.x, pos.y);
     addShape(newShape);
+    
+    if (activeTool === TOOLS.TEXT) {
+      setEditingTextId(newShape.id);
+      setActiveTool(TOOLS.SELECT);
+      return;
+    }
+
     currentShapeId.current = newShape.id;
     setIsDrawing(true);
   };
@@ -80,43 +94,71 @@ export const Canvas = () => {
     currentShapeId.current = null;
   };
 
+  const editingShape = shapes.find(s => s.id === editingTextId);
+
   return (
-    <Stage
-      width={dimensions.width}
-      height={dimensions.height}
-      onMouseDown={handleMouseDown}
-      onMousemove={handleMouseMove}
-      onMouseup={handleMouseUp}
-      onTouchStart={handleMouseDown}
-      onTouchMove={handleMouseMove}
-      onTouchEnd={handleMouseUp}
-      className="absolute inset-0 z-0"
-    >
-      <Layer>
-        {shapes.map((shape) => (
-          <ShapeRenderer
-            key={shape.id}
-            shape={shape}
-            isSelected={shape.id === selectedId}
-            onSelect={() => {
-              if (activeTool === TOOLS.SELECT) {
-                setSelectedId(shape.id);
-              }
-            }}
-            onChange={(newAttrs) => updateShape(shape.id, newAttrs)}
-          />
-        ))}
-        {selectedId && !isDrawing && !['line', 'arrow', 'pen'].includes(shapes.find(s => s.id === selectedId)?.type || '') && (
-          <SelectionBox selectedId={selectedId} />
-        )}
-        {selectedId && !isDrawing && ['line', 'arrow'].includes(shapes.find(s => s.id === selectedId)?.type || '') && (
-          <LineSelectionBox 
-            shape={shapes.find(s => s.id === selectedId)!} 
-            theme={theme}
-            onChange={(newAttrs) => updateShape(selectedId, newAttrs)} 
-          />
-        )}
-      </Layer>
-    </Stage>
+    <div className="absolute inset-0 z-0">
+      <Stage
+        width={dimensions.width}
+        height={dimensions.height}
+        onMouseDown={handleMouseDown}
+        onMousemove={handleMouseMove}
+        onMouseup={handleMouseUp}
+        onTouchStart={handleMouseDown}
+        onTouchMove={handleMouseMove}
+        onTouchEnd={handleMouseUp}
+      >
+        <Layer>
+          {shapes.map((shape) => (
+            <ShapeRenderer
+              key={shape.id}
+              shape={shape}
+              isSelected={shape.id === selectedId}
+              onSelect={() => {
+                if (activeTool === TOOLS.SELECT) {
+                  setSelectedId(shape.id);
+                }
+              }}
+              onChange={(newAttrs) => updateShape(shape.id, newAttrs)}
+            />
+          ))}
+          {selectedId && !isDrawing && !['line', 'arrow', 'pen'].includes(shapes.find(s => s.id === selectedId)?.type || '') && (
+            <SelectionBox selectedId={selectedId} />
+          )}
+          {selectedId && !isDrawing && ['line', 'arrow'].includes(shapes.find(s => s.id === selectedId)?.type || '') && (
+            <LineSelectionBox 
+              shape={shapes.find(s => s.id === selectedId)!} 
+              theme={theme}
+              onChange={(newAttrs) => updateShape(selectedId, newAttrs)} 
+            />
+          )}
+        </Layer>
+      </Stage>
+
+      {editingShape && editingShape.type === 'text' && (
+        <textarea
+          value={editingShape.text || ''}
+          onChange={(e) => updateShape(editingShape.id, { text: e.target.value })}
+          onBlur={() => setEditingTextId(null)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setEditingTextId(null);
+            e.stopPropagation();
+          }}
+          autoFocus
+          onFocus={(e) => e.target.select()}
+          className="absolute z-10 bg-transparent outline-none resize-none overflow-hidden whitespace-pre pointer-events-auto"
+          style={{
+            top: editingShape.y + 5,
+            left: editingShape.x + 5,
+            fontSize: `${editingShape.fontSize}px`,
+            fontFamily: editingShape.fontFamily,
+            color: editingShape.stroke,
+            lineHeight: 1,
+            width: `${Math.max(100, (editingShape.text || '').length * (editingShape.fontSize || 20) * 0.6)}px`,
+            minHeight: `${(editingShape.fontSize || 20) * 1.5}px`
+          }}
+        />
+      )}
+    </div>
   );
 };

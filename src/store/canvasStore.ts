@@ -23,10 +23,12 @@ interface CanvasState {
   history: Shape[][];
   historyStep: number;
   selectedId: string | null;
+  editingTextId: string | null;
   activeTool: string;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
   setTheme: (theme: 'light' | 'dark') => void;
+  setEditingTextId: (id: string | null) => void;
   addShape: (shape: Shape) => void;
   updateShape: (id: string, newProps: Partial<Shape>) => void;
   deleteShape: (id: string) => void;
@@ -44,11 +46,13 @@ export const useCanvasStore = create<CanvasState>((set) => ({
   history: [[]],
   historyStep: 0,
   selectedId: null,
+  editingTextId: null,
   activeTool: TOOLS.SELECT,
   theme: 'light',
 
   toggleTheme: () => set((state) => ({ theme: state.theme === 'light' ? 'dark' : 'light' })),
   setTheme: (theme) => set({ theme }),
+  setEditingTextId: (id) => set({ editingTextId: id }),
 
   loadInitialState: (shapes) => set({ shapes, history: [shapes], historyStep: 0 }),
 
