@@ -1,4 +1,5 @@
 import React from 'react';
+import { Minus, Plus } from 'lucide-react';
 import { useCanvasStore } from '../../store/canvasStore';
 import { COLORS } from '../../lib/constants';
 
@@ -43,6 +44,13 @@ export const StylePanel = () => {
     { label: 'Serif', value: 'Georgia, serif' },
   ];
 
+  const sizePresets = [
+    { label: 'S', size: 16 },
+    { label: 'M', size: 24 },
+    { label: 'L', size: 36 },
+    { label: 'XL', size: 48 },
+  ];
+
   return (
     <div className="absolute right-6 top-24 w-64 bg-white dark:bg-zinc-800 rounded-xl shadow-lg border border-gray-200 dark:border-zinc-700 p-4 pointer-events-auto z-10 transition-colors">
       <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 jetbrains-mono">Properties</h3>
@@ -77,18 +85,80 @@ export const StylePanel = () => {
             </div>
 
             <div>
-              <div className="flex justify-between items-center mb-1">
-                <label className="text-sm text-gray-700 dark:text-gray-300">Font Size</label>
-                <span className="text-xs text-gray-500 dark:text-gray-400 jetbrains-mono">{selectedShape.fontSize || 20}px</span>
+              <div className="flex justify-between items-center mb-1.5">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Font Size</label>
+                <span className="text-xs font-semibold text-[#FF5A36] jetbrains-mono">
+                  {selectedShape.fontSize || 20}px
+                </span>
               </div>
-              <input
-                type="range"
-                min="12"
-                max="96"
-                value={selectedShape.fontSize || 20}
-                onChange={(e) => updateShape(selectedShape.id, { fontSize: Number(e.target.value) })}
-                className="w-full accent-[#FF5A36]"
-              />
+
+              {/* Font Size Preset Pad */}
+              <div className="grid grid-cols-4 gap-1.5 mb-2 bg-gray-100 dark:bg-zinc-900 p-1 rounded-lg border border-gray-200/80 dark:border-zinc-700/80">
+                {sizePresets.map(({ label, size }) => {
+                  const isActive = (selectedShape.fontSize || 20) === size;
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => updateShape(selectedShape.id, { fontSize: size })}
+                      className={`py-1 text-xs font-semibold rounded-md transition-all flex flex-col items-center justify-center ${
+                        isActive
+                          ? 'bg-[#FF5A36] text-white shadow-xs'
+                          : 'text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <span>{label}</span>
+                      <span className="text-[10px] font-normal opacity-80">{size}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Custom Size Stepper & Numeric Input */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const current = selectedShape.fontSize || 20;
+                    updateShape(selectedShape.id, { fontSize: Math.max(8, current - 2) });
+                  }}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-700 dark:text-gray-300 transition-colors"
+                  title="Decrease font size"
+                >
+                  <Minus size={14} />
+                </button>
+
+                <div className="relative flex-1">
+                  <input
+                    type="number"
+                    min="8"
+                    max="200"
+                    value={selectedShape.fontSize || 20}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      if (val >= 1 && val <= 300) {
+                        updateShape(selectedShape.id, { fontSize: val });
+                      }
+                    }}
+                    className="w-full text-center py-1 px-2 border border-gray-200 dark:border-zinc-700 rounded-lg text-sm font-semibold bg-white dark:bg-zinc-900 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-[#FF5A36] focus:ring-1 focus:ring-[#FF5A36] transition-colors"
+                  />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 dark:text-gray-500 pointer-events-none">
+                    px
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const current = selectedShape.fontSize || 20;
+                    updateShape(selectedShape.id, { fontSize: Math.min(200, current + 2) });
+                  }}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-700 dark:text-gray-300 transition-colors"
+                  title="Increase font size"
+                >
+                  <Plus size={14} />
+                </button>
+              </div>
             </div>
           </>
         )}
