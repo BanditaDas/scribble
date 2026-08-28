@@ -19,7 +19,7 @@ export const StylePanel = () => {
     updateShape(selectedShape.id, { strokeWidth: Number(e.target.value) });
   };
 
-  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     updateShape(selectedShape.id, { text: e.target.value });
   };
 
@@ -35,6 +35,14 @@ export const StylePanel = () => {
     'transparent'
   ];
 
+  const textColors = colors.filter(c => c !== 'transparent');
+
+  const fontFamilies = [
+    { label: 'Inter (Sans)', value: 'Inter, sans-serif' },
+    { label: 'JetBrains Mono', value: '"JetBrains Mono", monospace' },
+    { label: 'Serif', value: 'Georgia, serif' },
+  ];
+
   return (
     <div className="absolute right-6 top-24 w-64 bg-white dark:bg-zinc-800 rounded-xl shadow-lg border border-gray-200 dark:border-zinc-700 p-4 pointer-events-auto z-10 transition-colors">
       <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 jetbrains-mono">Properties</h3>
@@ -43,20 +51,40 @@ export const StylePanel = () => {
         {selectedShape.type === 'text' && (
           <>
             <div>
-              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Text</label>
-              <input
-                type="text"
+              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Text Content</label>
+              <textarea
                 value={selectedShape.text || ''}
                 onChange={handleTextChange}
-                className="w-full px-2 py-1 border border-gray-200 dark:border-zinc-600 rounded text-sm focus:outline-none focus:border-[#FF5A36] focus:ring-1 focus:ring-[#FF5A36] dark:bg-zinc-900 dark:text-gray-100 transition-colors"
+                rows={2}
+                placeholder="Type text..."
+                className="w-full px-2 py-1.5 border border-gray-200 dark:border-zinc-600 rounded text-sm focus:outline-none focus:border-[#FF5A36] focus:ring-1 focus:ring-[#FF5A36] dark:bg-zinc-900 dark:text-gray-100 transition-colors resize-none"
               />
             </div>
+
             <div>
-              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Font Size: {selectedShape.fontSize}px</label>
+              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Font Family</label>
+              <select
+                value={selectedShape.fontFamily || 'Inter, sans-serif'}
+                onChange={(e) => updateShape(selectedShape.id, { fontFamily: e.target.value })}
+                className="w-full px-2 py-1.5 border border-gray-200 dark:border-zinc-600 rounded text-sm focus:outline-none focus:border-[#FF5A36] focus:ring-1 focus:ring-[#FF5A36] dark:bg-zinc-900 dark:text-gray-100 transition-colors"
+              >
+                {fontFamilies.map((font) => (
+                  <option key={font.value} value={font.value}>
+                    {font.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-sm text-gray-700 dark:text-gray-300">Font Size</label>
+                <span className="text-xs text-gray-500 dark:text-gray-400 jetbrains-mono">{selectedShape.fontSize || 20}px</span>
+              </div>
               <input
                 type="range"
-                min="10"
-                max="120"
+                min="12"
+                max="96"
                 value={selectedShape.fontSize || 20}
                 onChange={(e) => updateShape(selectedShape.id, { fontSize: Number(e.target.value) })}
                 className="w-full accent-[#FF5A36]"
@@ -66,9 +94,11 @@ export const StylePanel = () => {
         )}
 
         <div>
-          <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Stroke</label>
+          <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">
+            {selectedShape.type === 'text' ? 'Text Color' : 'Stroke'}
+          </label>
           <div className="flex flex-wrap gap-2">
-            {colors.map((c) => (
+            {(selectedShape.type === 'text' ? textColors : colors).map((c) => (
               <button
                 key={`stroke-${c}`}
                 className={`w-6 h-6 rounded-full border ${selectedShape.stroke === c ? 'ring-2 ring-offset-1 dark:ring-offset-zinc-800 ring-[#FF5A36]' : 'border-gray-200 dark:border-zinc-600'} transition-all`}
@@ -80,7 +110,7 @@ export const StylePanel = () => {
           </div>
         </div>
 
-        {selectedShape.type !== 'line' && selectedShape.type !== 'arrow' && selectedShape.type !== 'pen' && (
+        {selectedShape.type !== 'line' && selectedShape.type !== 'arrow' && selectedShape.type !== 'pen' && selectedShape.type !== 'text' && (
           <div>
             <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Fill</label>
             <div className="flex flex-wrap gap-2">
@@ -99,7 +129,10 @@ export const StylePanel = () => {
 
         {selectedShape.type !== 'text' && (
           <div>
-            <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Stroke Width: {selectedShape.strokeWidth}px</label>
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-sm text-gray-700 dark:text-gray-300">Stroke Width</label>
+              <span className="text-xs text-gray-500 dark:text-gray-400 jetbrains-mono">{selectedShape.strokeWidth || 2}px</span>
+            </div>
             <input
               type="range"
               min="1"

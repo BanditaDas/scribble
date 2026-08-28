@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Transformer } from 'react-konva';
+import { useCanvasStore } from '../../store/canvasStore';
 
 interface SelectionBoxProps {
   selectedId: string;
@@ -7,6 +8,9 @@ interface SelectionBoxProps {
 
 export const SelectionBox = ({ selectedId }: SelectionBoxProps) => {
   const trRef = useRef<any>(null);
+  const shapes = useCanvasStore((state) => state.shapes);
+  const selectedShape = shapes.find((s) => s.id === selectedId);
+  const isText = selectedShape?.type === 'text';
 
   useEffect(() => {
     if (trRef.current) {
@@ -28,6 +32,18 @@ export const SelectionBox = ({ selectedId }: SelectionBoxProps) => {
         }
         return newBox;
       }}
+      enabledAnchors={
+        isText
+          ? ['top-left', 'top-right', 'bottom-left', 'bottom-right']
+          : ['top-left', 'top-center', 'top-right', 'middle-right', 'middle-left', 'bottom-left', 'bottom-center', 'bottom-right']
+      }
+      keepRatio={isText}
+      anchorStroke="#FF5A36"
+      anchorFill="#FFFFFF"
+      anchorSize={8}
+      anchorCornerRadius={2}
+      borderStroke="#FF5A36"
+      borderDash={[4, 4]}
     />
   );
 };

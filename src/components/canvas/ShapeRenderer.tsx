@@ -24,13 +24,17 @@ export const ShapeRenderer = ({ shape, isSelected, onSelect, onChange }: ShapeRe
     draggable: isSelected,
     onClick: onSelect,
     onTap: onSelect,
-    onDblClick: () => {
+    onDblClick: (e: any) => {
       if (shape.type === 'text') {
+        e?.cancelBubble && (e.cancelBubble = true);
+        useCanvasStore.getState().setSelectedId(shape.id);
         useCanvasStore.getState().setEditingTextId(shape.id);
       }
     },
-    onDblTap: () => {
+    onDblTap: (e: any) => {
       if (shape.type === 'text') {
+        e?.cancelBubble && (e.cancelBubble = true);
+        useCanvasStore.getState().setSelectedId(shape.id);
         useCanvasStore.getState().setEditingTextId(shape.id);
       }
     },
@@ -58,6 +62,15 @@ export const ShapeRenderer = ({ shape, isSelected, onSelect, onChange }: ShapeRe
           y: node.y(),
           rotation: node.rotation(),
           points: scaledPoints,
+        });
+      } else if (shape.type === 'text') {
+        const newFontSize = Math.max(10, Math.round((shape.fontSize || 20) * scaleX));
+        onChange({
+          ...shape,
+          x: node.x(),
+          y: node.y(),
+          rotation: node.rotation(),
+          fontSize: newFontSize,
         });
       } else {
         onChange({
@@ -114,15 +127,21 @@ export const ShapeRenderer = ({ shape, isSelected, onSelect, onChange }: ShapeRe
         />
       );  
     case 'text':
+      const textFill = shape.stroke || (useCanvasStore.getState().theme === 'dark' ? '#FFFFFF' : '#2D2D2D');
       return (
         <Text
           {...commonProps}
           ref={shapeRef}
-          text={shape.text}
-          fontSize={shape.fontSize}
-          fontFamily={shape.fontFamily}
-          padding={5}
+          text={shape.text || ''}
+          fontSize={shape.fontSize || 20}
+          fontFamily={shape.fontFamily || 'Inter'}
+          fill={textFill}
+          stroke={undefined}
+          strokeWidth={0}
+          padding={4}
+          lineHeight={1.2}
           visible={!isEditing}
+          draggable={isSelected && !isEditing}
         />
       );
     default:

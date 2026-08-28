@@ -1,11 +1,91 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Stage, Layer } from 'react-konva';
-import { useCanvasStore } from '../../store/canvasStore';
+import { useCanvasStore, Shape } from '../../store/canvasStore';
 import { TOOLS } from '../../lib/constants';
 import { createShape } from '../../lib/shapeFactory';
 import { ShapeRenderer } from './ShapeRenderer';
 import { SelectionBox } from './SelectionBox';
 import { LineSelectionBox } from './LineSelectionBox';
+
+interface TextEditorOverlayProps {
+  shape: Shape;
+  onUpdate: (text: string) => void;
+  onFinish: (text: string) => void;
+  onCancel: () => void;
+}
+
+const TextEditorOverlay = ({ shape, onUpdate, onFinish, onCancel }: TextEditorOverlayProps) => {
+  const [text, setText] = useState(shape.text || '');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        const len = textareaRef.current.value.length;
+        textareaRef.current.setSelectionRange(len, len);
+      }
+    }, 10);
+    return () => clearTimeout(timer);
+  }, [shape.id]);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.max((shape.fontSize || 20) * 1.4, textareaRef.current.scrollHeight)}px`;
+    }
+  }, [text, shape.fontSize]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setText(val);
+    onUpdate(val);
+  };
+
+  const handleBlur = () => {
+    onFinish(text);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    e.stopPropagation();
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      onCancel();
+    } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      onFinish(text);
+    }
+  };
+
+  const textColor = shape.stroke || (useCanvasStore.getState().theme === 'dark' ? '#FFFFFF' : '#2D2D2D');
+
+  return (
+    <textarea
+      ref={textareaRef}
+      value={text}
+      placeholder="Type something..."
+      onChange={handleChange}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+      onMouseDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
+      className="absolute z-20 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xs outline-none resize-none overflow-hidden placeholder-gray-400 dark:placeholder-gray-500 border border-dashed border-[#FF5A36] rounded-xs shadow-sm"
+      style={{
+        top: Math.max(0, shape.y),
+        left: Math.max(0, shape.x),
+        fontSize: `${shape.fontSize || 20}px`,
+        fontFamily: shape.fontFamily || 'Inter',
+        color: textColor,
+        lineHeight: 1.2,
+        padding: '4px',
+        minWidth: '140px',
+        width: `${Math.max(140, (text || 'Type something...').length * (shape.fontSize || 20) * 0.65)}px`,
+        maxWidth: '80vw',
+        boxSizing: 'border-box',
+      }}
+    />
+  );
+};
 
 export const Canvas = () => {
   const shapes = useCanvasStore((state) => state.shapes);
@@ -38,6 +118,10 @@ export const Canvas = () => {
 
   const handleMouseDown = (e: any) => {
     if (editingTextId) {
+      const currentEditing = shapes.find(s => s.id === editingTextId);
+      if (currentEditing && (!currentEditing.text || currentEditing.text.trim() === '')) {
+        deleteShape(currentEditing.id);
+      }
       setEditingTextId(null);
     }
 
@@ -51,10 +135,13 @@ export const Canvas = () => {
     }
 
     const pos = e.target.getStage().getPointerPosition();
+    if (!pos) return;
+
     const newShape = createShape(activeTool, pos.x, pos.y);
     addShape(newShape);
     
     if (activeTool === TOOLS.TEXT) {
+      setSelectedId(newShape.id);
       setEditingTextId(newShape.id);
       setActiveTool(TOOLS.SELECT);
       return;
@@ -70,7 +157,9 @@ export const Canvas = () => {
     if (activeTool === TOOLS.SELECT) return;
 
     const stage = e.target.getStage();
-    const pos = stage.getPointerPosition();
+    const pos = stage?.getPointerPosition();
+    if (!pos) return;
+
     const currentShapes = useCanvasStore.getState().shapes;
     const currentShape = currentShapes.find(s => s.id === currentShapeId.current);
     
@@ -95,10 +184,16 @@ export const Canvas = () => {
     currentShapeId.current = null;
   };
 
+  const getCursorClass = () => {
+    if (activeTool === TOOLS.TEXT) return 'cursor-text';
+    if (activeTool === TOOLS.SELECT) return 'cursor-default';
+    return 'cursor-crosshair';
+  };
+
   const editingShape = shapes.find(s => s.id === editingTextId);
 
   return (
-    <div className="absolute inset-0 z-0">
+    <div className={`absolute inset-0 z-0 ${getCursorClass()}`}>
       <Stage
         width={dimensions.width}
         height={dimensions.height}
@@ -123,7 +218,7 @@ export const Canvas = () => {
               onChange={(newAttrs) => updateShape(shape.id, newAttrs)}
             />
           ))}
-          {selectedId && !isDrawing && !['line', 'arrow', 'pen'].includes(shapes.find(s => s.id === selectedId)?.type || '') && (
+          {selectedId && !isDrawing && selectedId !== editingTextId && !['line', 'arrow', 'pen'].includes(shapes.find(s => s.id === selectedId)?.type || '') && (
             <SelectionBox selectedId={selectedId} />
           )}
           {selectedId && !isDrawing && ['line', 'arrow'].includes(shapes.find(s => s.id === selectedId)?.type || '') && (
@@ -137,41 +232,25 @@ export const Canvas = () => {
       </Stage>
 
       {editingShape && editingShape.type === 'text' && (
-        <textarea
-          value={editingShape.text || ''}
-          placeholder="Type something..."
-          onChange={(e) => updateShape(editingShape.id, { text: e.target.value })}
-          onBlur={() => {
+        <TextEditorOverlay
+          key={editingShape.id}
+          shape={editingShape}
+          onUpdate={(val) => {
+            updateShape(editingShape.id, { text: val });
+          }}
+          onFinish={(val) => {
+            setEditingTextId(null);
+            if (!val || val.trim() === '') {
+              deleteShape(editingShape.id);
+            } else {
+              updateShape(editingShape.id, { text: val });
+            }
+          }}
+          onCancel={() => {
             setEditingTextId(null);
             if (!editingShape.text || editingShape.text.trim() === '') {
               deleteShape(editingShape.id);
             }
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') {
-              setEditingTextId(null);
-              if (!editingShape.text || editingShape.text.trim() === '') {
-                deleteShape(editingShape.id);
-              }
-            }
-            e.stopPropagation();
-          }}
-          autoFocus
-          onFocus={(e) => {
-            const val = e.target.value;
-            e.target.value = '';
-            e.target.value = val;
-          }}
-          className="absolute z-10 bg-transparent outline-none resize-none overflow-hidden whitespace-pre pointer-events-auto placeholder-gray-400 dark:placeholder-gray-500"
-          style={{
-            top: editingShape.y + 5,
-            left: editingShape.x + 5,
-            fontSize: `${editingShape.fontSize}px`,
-            fontFamily: editingShape.fontFamily,
-            color: editingShape.stroke,
-            lineHeight: 1,
-            width: `${Math.max(150, (editingShape.text || '').length * (editingShape.fontSize || 20) * 0.6)}px`,
-            minHeight: `${(editingShape.fontSize || 20) * 1.5}px`
           }}
         />
       )}
