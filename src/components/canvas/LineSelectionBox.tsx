@@ -4,7 +4,7 @@ import { Shape } from '../../store/canvasStore';
 
 interface LineSelectionBoxProps {
   shape: Shape;
-  onChange: (newAttrs: Partial<Shape>) => void;
+  onChange: (newAttrs: Partial<Shape>, saveHistory?: boolean) => void;
   theme: 'light' | 'dark';
 }
 
@@ -21,13 +21,13 @@ export const LineSelectionBox = ({ shape, onChange, theme }: LineSelectionBoxPro
     e.cancelBubble = true; // Prevent dragging the whole line
   };
 
-  const handleDrag = (index: 0 | 2) => (e: any) => {
+  const handleDrag = (index: 0 | 2, saveHistory: boolean) => (e: any) => {
     e.cancelBubble = true;
     const node = e.target;
     const newPoints = [...shape.points!];
     newPoints[index] = node.x() - shape.x;
     newPoints[index + 1] = node.y() - shape.y;
-    onChange({ points: newPoints });
+    onChange({ points: newPoints }, saveHistory);
   };
 
   return (
@@ -41,8 +41,8 @@ export const LineSelectionBox = ({ shape, onChange, theme }: LineSelectionBoxPro
         strokeWidth={2}
         draggable
         onDragStart={onDragStartHandle}
-        onDragMove={handleDrag(0)}
-        onDragEnd={handleDrag(0)}
+        onDragMove={handleDrag(0, false)}
+        onDragEnd={handleDrag(0, true)}
       />
       <Circle
         x={endPoint.x}
@@ -53,8 +53,8 @@ export const LineSelectionBox = ({ shape, onChange, theme }: LineSelectionBoxPro
         strokeWidth={2}
         draggable
         onDragStart={onDragStartHandle}
-        onDragMove={handleDrag(2)}
-        onDragEnd={handleDrag(2)}
+        onDragMove={handleDrag(2, false)}
+        onDragEnd={handleDrag(2, true)}
       />
     </>
   );

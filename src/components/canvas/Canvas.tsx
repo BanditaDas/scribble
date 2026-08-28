@@ -98,6 +98,7 @@ export const Canvas = () => {
   const addShape = useCanvasStore((state) => state.addShape);
   const updateShape = useCanvasStore((state) => state.updateShape);
   const deleteShape = useCanvasStore((state) => state.deleteShape);
+  const commitHistory = useCanvasStore((state) => state.commitHistory);
   const setSelectedId = useCanvasStore((state) => state.setSelectedId);
   
   const [isDrawing, setIsDrawing] = useState(false);
@@ -120,7 +121,9 @@ export const Canvas = () => {
     if (editingTextId) {
       const currentEditing = shapes.find(s => s.id === editingTextId);
       if (currentEditing && (!currentEditing.text || currentEditing.text.trim() === '')) {
-        deleteShape(currentEditing.id);
+        deleteShape(currentEditing.id, false);
+      } else {
+        commitHistory();
       }
       setEditingTextId(null);
     }
@@ -138,15 +141,16 @@ export const Canvas = () => {
     if (!pos) return;
 
     const newShape = createShape(activeTool, pos.x, pos.y);
-    addShape(newShape);
     
     if (activeTool === TOOLS.TEXT) {
+      addShape(newShape, false);
       setSelectedId(newShape.id);
       setEditingTextId(newShape.id);
       setActiveTool(TOOLS.SELECT);
       return;
     }
 
+    addShape(newShape, false);
     currentShapeId.current = newShape.id;
     setIsDrawing(true);
   };
@@ -167,19 +171,49 @@ export const Canvas = () => {
 
     if (activeTool === TOOLS.PEN) {
       const newPoints = currentShape.points ? [...currentShape.points, pos.x, pos.y] : [pos.x, pos.y];
-      updateShape(currentShape.id, { points: newPoints });
+      updateShape(currentShape.id, { points: newPoints }, false);
     } else if (activeTool === TOOLS.LINE || activeTool === TOOLS.ARROW) {
       const points = currentShape.points ? [currentShape.points[0], currentShape.points[1], pos.x, pos.y] : [];
-      updateShape(currentShape.id, { points });
+      updateShape(currentShape.id, { points }, false);
     } else if (activeTool === TOOLS.RECTANGLE || activeTool === TOOLS.ELLIPSE) {
       updateShape(currentShape.id, {
         width: pos.x - currentShape.x,
         height: pos.y - currentShape.y,
-      });
+      }, false);
     }
   };
 
   const handleMouseUp = () => {
+    if (isDrawing && currentShapeId.current) {
+      const currentShapes = useCanvasStore.getState().shapes;
+      const currentShape = currentShapes.find(s => s.id === currentShapeId.current);
+
+      if (currentShape) {
+        let isValid = true;
+        if (currentShape.type === 'rectangle' || currentShape.type === 'ellipse') {
+          if (Math.abs(currentShape.width || 0) < 4 && Math.abs(currentShape.height || 0) < 4) {
+            isValid = false;
+          }
+        } else if (currentShape.type === 'line' || currentShape.type === 'arrow') {
+          const pts = currentShape.points || [];
+          if (pts.length < 4 || Math.hypot(pts[2] - pts[0], pts[3] - pts[1]) < 4) {
+            isValid = false;
+          }
+        } else if (currentShape.type === 'pen') {
+          const pts = currentShape.points || [];
+          if (pts.length < 4) {
+            isValid = false;
+          }
+        }
+
+        if (!isValid) {
+          deleteShape(currentShape.id, false);
+        } else {
+          commitHistory();
+        }
+      }
+    }
+
     setIsDrawing(false);
     currentShapeId.current = null;
   };
@@ -215,7 +249,7 @@ export const Canvas = () => {
                   setSelectedId(shape.id);
                 }
               }}
-              onChange={(newAttrs) => updateShape(shape.id, newAttrs)}
+              onChange={(newAttrs) => updateShape(shape.id, newAttrs, true)}
             />
           ))}
           {selectedId && !isDrawing && selectedId !== editingTextId && !['line', 'arrow', 'pen'].includes(shapes.find(s => s.id === selectedId)?.type || '') && (
@@ -225,7 +259,7 @@ export const Canvas = () => {
             <LineSelectionBox 
               shape={shapes.find(s => s.id === selectedId)!} 
               theme={theme}
-              onChange={(newAttrs) => updateShape(selectedId, newAttrs)} 
+              onChange={(newAttrs, saveHistory) => updateShape(selectedId, newAttrs, saveHistory)} 
             />
           )}
         </Layer>
@@ -236,20 +270,20 @@ export const Canvas = () => {
           key={editingShape.id}
           shape={editingShape}
           onUpdate={(val) => {
-            updateShape(editingShape.id, { text: val });
+            updateShape(editingShape.id, { text: val }, false);
           }}
           onFinish={(val) => {
             setEditingTextId(null);
             if (!val || val.trim() === '') {
-              deleteShape(editingShape.id);
+              deleteShape(editingShape.id, false);
             } else {
-              updateShape(editingShape.id, { text: val });
+              updateShape(editingShape.id, { text: val }, true);
             }
           }}
           onCancel={() => {
             setEditingTextId(null);
             if (!editingShape.text || editingShape.text.trim() === '') {
-              deleteShape(editingShape.id);
+              deleteShape(editingShape.id, false);
             }
           }}
         />

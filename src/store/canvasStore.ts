@@ -29,9 +29,10 @@ interface CanvasState {
   toggleTheme: () => void;
   setTheme: (theme: 'light' | 'dark') => void;
   setEditingTextId: (id: string | null) => void;
-  addShape: (shape: Shape) => void;
-  updateShape: (id: string, newProps: Partial<Shape>) => void;
-  deleteShape: (id: string) => void;
+  addShape: (shape: Shape, saveHistory?: boolean) => void;
+  updateShape: (id: string, newProps: Partial<Shape>, saveHistory?: boolean) => void;
+  deleteShape: (id: string, saveHistory?: boolean) => void;
+  commitHistory: () => void;
   setShapes: (shapes: Shape[]) => void;
   setSelectedId: (id: string | null) => void;
   setActiveTool: (tool: string) => void;
@@ -56,8 +57,14 @@ export const useCanvasStore = create<CanvasState>((set) => ({
 
   loadInitialState: (shapes) => set({ shapes, history: [shapes], historyStep: 0 }),
 
-  addShape: (shape) => set((state) => {
+  addShape: (shape, saveHistory = true) => set((state) => {
     const newShapes = [...state.shapes, shape];
+    if (!saveHistory) {
+      return {
+        shapes: newShapes,
+        selectedId: shape.id,
+      };
+    }
     const newHistory = state.history.slice(0, state.historyStep + 1);
     return {
       shapes: newShapes,
@@ -67,10 +74,13 @@ export const useCanvasStore = create<CanvasState>((set) => ({
     };
   }),
 
-  updateShape: (id, newProps) => set((state) => {
+  updateShape: (id, newProps, saveHistory = true) => set((state) => {
     const newShapes = state.shapes.map((shape) =>
       shape.id === id ? { ...shape, ...newProps } : shape
     );
+    if (!saveHistory) {
+      return { shapes: newShapes };
+    }
     const newHistory = state.history.slice(0, state.historyStep + 1);
     return {
       shapes: newShapes,
@@ -79,14 +89,34 @@ export const useCanvasStore = create<CanvasState>((set) => ({
     };
   }),
 
-  deleteShape: (id) => set((state) => {
+  deleteShape: (id, saveHistory = true) => set((state) => {
     const newShapes = state.shapes.filter((shape) => shape.id !== id);
+    const newSelectedId = state.selectedId === id ? null : state.selectedId;
+    if (!saveHistory) {
+      return {
+        shapes: newShapes,
+        selectedId: newSelectedId,
+      };
+    }
     const newHistory = state.history.slice(0, state.historyStep + 1);
     return {
       shapes: newShapes,
       history: [...newHistory, newShapes],
       historyStep: newHistory.length,
-      selectedId: state.selectedId === id ? null : state.selectedId,
+      selectedId: newSelectedId,
+    };
+  }),
+
+  commitHistory: () => set((state) => {
+    const currentShapes = state.shapes;
+    const previousSnapshot = state.history[state.historyStep];
+    if (JSON.stringify(currentShapes) === JSON.stringify(previousSnapshot)) {
+      return state;
+    }
+    const newHistory = state.history.slice(0, state.historyStep + 1);
+    return {
+      history: [...newHistory, currentShapes],
+      historyStep: newHistory.length,
     };
   }),
 
