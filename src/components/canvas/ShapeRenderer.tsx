@@ -21,6 +21,8 @@ export const ShapeRenderer = ({ shape, isSelected, onSelect, onChange }: ShapeRe
     stroke: shape.stroke,
     fill: shape.fill,
     strokeWidth: shape.strokeWidth,
+    opacity: shape.opacity ?? 1,
+    dash: shape.strokeStyle === 'dashed' ? [8, 8] : shape.strokeStyle === 'dotted' ? [3, 5] : undefined,
     draggable: isSelected,
     onClick: onSelect,
     onTap: onSelect,
@@ -101,6 +103,7 @@ export const ShapeRenderer = ({ shape, isSelected, onSelect, onChange }: ShapeRe
           ref={shapeRef}
           width={absW}
           height={absH}
+          cornerRadius={shape.cornerRadius || 0}
         />
       );
     }

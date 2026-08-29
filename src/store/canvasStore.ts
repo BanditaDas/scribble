@@ -11,6 +11,9 @@ export interface Shape {
   stroke?: string;
   fill?: string;
   strokeWidth?: number;
+  strokeStyle?: 'solid' | 'dashed' | 'dotted';
+  opacity?: number;
+  cornerRadius?: number;
   points?: number[];
   text?: string;
   fontSize?: number;
@@ -32,6 +35,11 @@ interface CanvasState {
   addShape: (shape: Shape, saveHistory?: boolean) => void;
   updateShape: (id: string, newProps: Partial<Shape>, saveHistory?: boolean) => void;
   deleteShape: (id: string, saveHistory?: boolean) => void;
+  duplicateShape: (id: string) => void;
+  bringToFront: (id: string) => void;
+  sendToBack: (id: string) => void;
+  bringForward: (id: string) => void;
+  sendBackward: (id: string) => void;
   commitHistory: () => void;
   setShapes: (shapes: Shape[]) => void;
   setSelectedId: (id: string | null) => void;
@@ -104,6 +112,82 @@ export const useCanvasStore = create<CanvasState>((set) => ({
       history: [...newHistory, newShapes],
       historyStep: newHistory.length,
       selectedId: newSelectedId,
+    };
+  }),
+
+  duplicateShape: (id) => set((state) => {
+    const shape = state.shapes.find((s) => s.id === id);
+    if (!shape) return state;
+    const duplicated: Shape = {
+      ...shape,
+      id: crypto.randomUUID(),
+      x: shape.x + 20,
+      y: shape.y + 20,
+      points: shape.points ? shape.points.map((p, idx) => idx % 2 === 0 ? p + 20 : p + 20) : undefined,
+    };
+    const newShapes = [...state.shapes, duplicated];
+    const newHistory = state.history.slice(0, state.historyStep + 1);
+    return {
+      shapes: newShapes,
+      history: [...newHistory, newShapes],
+      historyStep: newHistory.length,
+      selectedId: duplicated.id,
+    };
+  }),
+
+  bringToFront: (id) => set((state) => {
+    const index = state.shapes.findIndex((s) => s.id === id);
+    if (index === -1 || index === state.shapes.length - 1) return state;
+    const shape = state.shapes[index];
+    const newShapes = [...state.shapes.filter((s) => s.id !== id), shape];
+    const newHistory = state.history.slice(0, state.historyStep + 1);
+    return {
+      shapes: newShapes,
+      history: [...newHistory, newShapes],
+      historyStep: newHistory.length,
+    };
+  }),
+
+  sendToBack: (id) => set((state) => {
+    const index = state.shapes.findIndex((s) => s.id === id);
+    if (index === -1 || index === 0) return state;
+    const shape = state.shapes[index];
+    const newShapes = [shape, ...state.shapes.filter((s) => s.id !== id)];
+    const newHistory = state.history.slice(0, state.historyStep + 1);
+    return {
+      shapes: newShapes,
+      history: [...newHistory, newShapes],
+      historyStep: newHistory.length,
+    };
+  }),
+
+  bringForward: (id) => set((state) => {
+    const index = state.shapes.findIndex((s) => s.id === id);
+    if (index === -1 || index === state.shapes.length - 1) return state;
+    const newShapes = [...state.shapes];
+    const temp = newShapes[index];
+    newShapes[index] = newShapes[index + 1];
+    newShapes[index + 1] = temp;
+    const newHistory = state.history.slice(0, state.historyStep + 1);
+    return {
+      shapes: newShapes,
+      history: [...newHistory, newShapes],
+      historyStep: newHistory.length,
+    };
+  }),
+
+  sendBackward: (id) => set((state) => {
+    const index = state.shapes.findIndex((s) => s.id === id);
+    if (index === -1 || index === 0) return state;
+    const newShapes = [...state.shapes];
+    const temp = newShapes[index];
+    newShapes[index] = newShapes[index - 1];
+    newShapes[index - 1] = temp;
+    const newHistory = state.history.slice(0, state.historyStep + 1);
+    return {
+      shapes: newShapes,
+      history: [...newHistory, newShapes],
+      historyStep: newHistory.length,
     };
   }),
 

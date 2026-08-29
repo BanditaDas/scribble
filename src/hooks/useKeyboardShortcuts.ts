@@ -4,6 +4,7 @@ import { TOOLS } from '../lib/constants';
 
 export const useKeyboardShortcuts = () => {
   const deleteShape = useCanvasStore((state) => state.deleteShape);
+  const duplicateShape = useCanvasStore((state) => state.duplicateShape);
   const selectedId = useCanvasStore((state) => state.selectedId);
   const setSelectedId = useCanvasStore((state) => state.setSelectedId);
   const undo = useCanvasStore((state) => state.undo);
@@ -19,6 +20,13 @@ export const useKeyboardShortcuts = () => {
       if (e.key === 'Backspace' || e.key === 'Delete') {
         if (selectedId) {
           deleteShape(selectedId);
+        }
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
+        if (selectedId) {
+          e.preventDefault();
+          duplicateShape(selectedId);
         }
       }
 
@@ -67,5 +75,5 @@ export const useKeyboardShortcuts = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [deleteShape, selectedId, setSelectedId, undo, redo, setActiveTool]);
+  }, [deleteShape, duplicateShape, selectedId, setSelectedId, undo, redo, setActiveTool]);
 };
