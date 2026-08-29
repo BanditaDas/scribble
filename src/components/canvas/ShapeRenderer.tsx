@@ -86,24 +86,46 @@ export const ShapeRenderer = ({ shape, isSelected, onSelect, onChange }: ShapeRe
   };
 
   switch (shape.type) {
-    case 'rectangle':
+    case 'rectangle': {
+      const w = shape.width || 0;
+      const h = shape.height || 0;
+      const x = w < 0 ? shape.x + w : shape.x;
+      const y = h < 0 ? shape.y + h : shape.y;
+      const absW = Math.max(0, Math.abs(w));
+      const absH = Math.max(0, Math.abs(h));
       return (
         <Rect
           {...commonProps}
+          x={x}
+          y={y}
           ref={shapeRef}
-          width={shape.width}
-          height={shape.height}
+          width={absW}
+          height={absH}
         />
       );
-    case 'ellipse':
+    }
+    case 'ellipse': {
+      const w = shape.width || 0;
+      const h = shape.height || 0;
+      const x = w < 0 ? shape.x + w : shape.x;
+      const y = h < 0 ? shape.y + h : shape.y;
+      const absW = Math.max(0, Math.abs(w));
+      const absH = Math.max(0, Math.abs(h));
+      const radiusX = absW / 2;
+      const radiusY = absH / 2;
       return (
         <Ellipse
           {...commonProps}
+          x={x}
+          y={y}
           ref={shapeRef}
-          radiusX={Math.abs((shape.width || 0) / 2)}
-          radiusY={Math.abs((shape.height || 0) / 2)}
+          radiusX={radiusX}
+          radiusY={radiusY}
+          offsetX={-radiusX}
+          offsetY={-radiusY}
         />
       );
+    }
     case 'line':
     case 'pen':
       return (

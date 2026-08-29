@@ -176,9 +176,16 @@ export const Canvas = () => {
       const points = currentShape.points ? [currentShape.points[0], currentShape.points[1], pos.x, pos.y] : [];
       updateShape(currentShape.id, { points }, false);
     } else if (activeTool === TOOLS.RECTANGLE || activeTool === TOOLS.ELLIPSE) {
+      let dx = pos.x - currentShape.x;
+      let dy = pos.y - currentShape.y;
+      if (e.evt?.shiftKey) {
+        const maxDist = Math.max(Math.abs(dx), Math.abs(dy));
+        dx = dx < 0 ? -maxDist : maxDist;
+        dy = dy < 0 ? -maxDist : maxDist;
+      }
       updateShape(currentShape.id, {
-        width: pos.x - currentShape.x,
-        height: pos.y - currentShape.y,
+        width: dx,
+        height: dy,
       }, false);
     }
   };
@@ -191,8 +198,24 @@ export const Canvas = () => {
       if (currentShape) {
         let isValid = true;
         if (currentShape.type === 'rectangle' || currentShape.type === 'ellipse') {
-          if (Math.abs(currentShape.width || 0) < 4 && Math.abs(currentShape.height || 0) < 4) {
+          let x = currentShape.x;
+          let y = currentShape.y;
+          let width = currentShape.width || 0;
+          let height = currentShape.height || 0;
+
+          if (width < 0) {
+            x += width;
+            width = Math.abs(width);
+          }
+          if (height < 0) {
+            y += height;
+            height = Math.abs(height);
+          }
+
+          if (width < 4 && height < 4) {
             isValid = false;
+          } else {
+            updateShape(currentShape.id, { x, y, width, height }, false);
           }
         } else if (currentShape.type === 'line' || currentShape.type === 'arrow') {
           const pts = currentShape.points || [];

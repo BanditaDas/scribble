@@ -53,6 +53,7 @@ export const useKeyboardShortcuts = () => {
         v: TOOLS.SELECT,
         r: TOOLS.RECTANGLE,
         o: TOOLS.ELLIPSE,
+        e: TOOLS.ELLIPSE,
         l: TOOLS.LINE,
         a: TOOLS.ARROW,
         p: TOOLS.PEN,
