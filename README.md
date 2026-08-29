@@ -1,56 +1,62 @@
 # Scribble 🎨
 
-> A browser-based, Figma-lite collaborative whiteboard / design tool.
+A minimal, frontend-only design tool inspired by Figma — sketch shapes, arrows, and text on an infinite canvas, all saved locally in your browser.
 
-🚧 **Status: In Progress** — this project is currently being built. 
+**🔗 Live Demo:** [scribble-murex.vercel.app](https://scribble-murex.vercel.app/)
 
 ---
 
 ## About
 
-Scribble lets users draw shapes, add text, create simple diagrams, move and transform elements, undo/redo changes, save their work locally, and export the canvas as a PNG — all in the browser, no backend required.
+Scribble is a lightweight whiteboard/design tool built to explore canvas-based interaction design entirely on the frontend — no backend, no external sync services. Everything you draw persists locally, so you can close the tab and pick up right where you left off.
 
-This is a frontend-only project by design: no server, no auth, no real-time multi-user sync. The focus is on interactions, state management, and UI architecture rather than just building static pages.
+## Features
 
-## Planned Features
-
-- 🖊️ Draw shapes: rectangle, ellipse, line, arrow, freehand pen, text
-- 🎯 Select, move, resize, and rotate elements
-- 🎨 Style controls: stroke color, fill, stroke width, font
-- ↩️ Undo / redo
-- 💾 Auto-save to localStorage (persists between sessions)
-- 📤 Export canvas as PNG
-- 🧹 Clear canvas
+- **Drawing tools** — Rectangle, ellipse, line, arrow, freehand pen, and text
+- **Selection & transform** — Move, resize, and rotate any element on the canvas
+- **Style controls** — Adjust stroke color, fill, and thickness
+- **Undo / redo** — Full history stack for every action
+- **Local persistence** — Your canvas is automatically saved via `localStorage`
+- **PNG export** — Download your board as an image
+- **Clear canvas** — Start fresh with one click
+- **Dot-grid canvas** — Clean, Figma-style visual reference grid
 
 ## Tech Stack
 
-- **Framework:** React (Vite)
-- **Styling:** Tailwind CSS
-- **Canvas engine:** react-konva (Konva.js)
-- **State persistence:** Browser localStorage
-- **Icons:** lucide-react
-- **Fonts:** Inter + JetBrains Mono
-- **Deployment:** Vercel
+| Layer | Tool |
+|---|---|
+| UI Framework | React |
+| Styling | Tailwind CSS |
+| Canvas Rendering | react-konva |
+| Icons | lucide-react |
+| Fonts | Inter, JetBrains Mono |
+| Persistence | localStorage |
+| Deployment | Vercel |
 
-## Design Direction
+## Design
 
-- Neutral graphite/fog palette with a single signal-orange (`#FF5A36`) accent
-- Floating, rounded toolbar over a dot-grid canvas background
-- Minimal, modern, developer-tool aesthetic
+Scribble uses a graphite/fog neutral palette with a single signal-orange (`#FF5A36`) accent, a floating rounded toolbar, and a dot-grid background — aiming for a clean, focused, tool-like feel rather than a generic app UI.
 
 ## Getting Started
 
+Clone the repo and install dependencies:
+
 ```bash
-# coming soon — setup instructions will be added once the initial build is ready
+git clone https://github.com/BanditaDas/scribble.git
+cd scribble
+npm install
+npm run dev
 ```
 
-## Roadmap
+## Usage
 
-- [ ] Canvas foundation (Konva stage, dot-grid background)
-- [ ] Full toolset (shapes, selection, transform)
-- [ ] Undo/redo + localStorage persistence
-- [ ] PNG export + UI polish
+1. Pick a tool from the floating toolbar (shape, pen, text, etc.)
+2. Draw on the canvas
+3. Select any element to move, resize, or restyle it
+4. Use undo/redo as needed
+5. Export your board as a PNG when you're done — your work is also auto-saved locally
 
 ---
 
-*More to come as this builds out — follow along on [LinkedIn](https://www.linkedin.com/in/banditadas-dev/).*
+**Portfolio:** [https://portfolio-six-theta-37.vercel.app/]
+**LinkedIn:** [https://www.linkedin.com/in/banditadas-dev/]
