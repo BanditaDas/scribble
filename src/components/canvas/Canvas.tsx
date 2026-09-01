@@ -233,6 +233,7 @@ export const Canvas = () => {
           deleteShape(currentShape.id, false);
         } else {
           commitHistory();
+          setSelectedId(currentShape.id);
         }
       }
     }
@@ -275,7 +276,7 @@ export const Canvas = () => {
               onChange={(newAttrs) => updateShape(shape.id, newAttrs, true)}
             />
           ))}
-          {selectedId && !isDrawing && selectedId !== editingTextId && !['line', 'arrow', 'pen'].includes(shapes.find(s => s.id === selectedId)?.type || '') && (
+          {selectedId && !isDrawing && selectedId !== editingTextId && !['line', 'arrow'].includes(shapes.find(s => s.id === selectedId)?.type || '') && (
             <SelectionBox selectedId={selectedId} />
           )}
           {selectedId && !isDrawing && ['line', 'arrow'].includes(shapes.find(s => s.id === selectedId)?.type || '') && (

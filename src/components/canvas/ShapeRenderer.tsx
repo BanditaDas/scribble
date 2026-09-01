@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { Rect, Ellipse, Line, Arrow, Text } from 'react-konva';
 import { Shape, useCanvasStore } from '../../store/canvasStore';
+import { TOOLS } from '../../lib/constants';
 
 interface ShapeRendererProps {
   shape: Shape;
@@ -12,6 +13,7 @@ interface ShapeRendererProps {
 export const ShapeRenderer = ({ shape, isSelected, onSelect, onChange }: ShapeRendererProps) => {
   const shapeRef = useRef<any>(null);
   const isEditing = useCanvasStore((state) => state.editingTextId === shape.id);
+  const activeTool = useCanvasStore((state) => state.activeTool);
 
   const commonProps = {
     id: shape.id,
@@ -23,9 +25,21 @@ export const ShapeRenderer = ({ shape, isSelected, onSelect, onChange }: ShapeRe
     strokeWidth: shape.strokeWidth,
     opacity: shape.opacity ?? 1,
     dash: shape.strokeStyle === 'dashed' ? [8, 8] : shape.strokeStyle === 'dotted' ? [3, 5] : undefined,
-    draggable: isSelected,
+    draggable: isSelected && activeTool === TOOLS.SELECT,
     onClick: onSelect,
     onTap: onSelect,
+    onMouseEnter: (e: any) => {
+      if (activeTool === TOOLS.SELECT) {
+        const container = e.target.getStage()?.container();
+        if (container) container.style.cursor = isSelected ? 'move' : 'pointer';
+      }
+    },
+    onMouseLeave: (e: any) => {
+      if (activeTool === TOOLS.SELECT) {
+        const container = e.target.getStage()?.container();
+        if (container) container.style.cursor = 'default';
+      }
+    },
     onDblClick: (e: any) => {
       if (shape.type === 'text') {
         e?.cancelBubble && (e.cancelBubble = true);
@@ -139,6 +153,7 @@ export const ShapeRenderer = ({ shape, isSelected, onSelect, onChange }: ShapeRe
           tension={shape.type === 'pen' ? 0.5 : 0}
           lineCap="round"
           lineJoin="round"
+          hitStrokeWidth={Math.max((shape.strokeWidth || 2) * 2, 20)}
         />
       );
     case 'arrow':
@@ -149,6 +164,7 @@ export const ShapeRenderer = ({ shape, isSelected, onSelect, onChange }: ShapeRe
           points={shape.points || []}
           pointerLength={10}
           pointerWidth={10}
+          hitStrokeWidth={Math.max((shape.strokeWidth || 2) * 2, 20)}
         />
       );  
     case 'text':

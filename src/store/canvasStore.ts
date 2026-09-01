@@ -204,7 +204,7 @@ export const useCanvasStore = create<CanvasState>((set) => ({
       id: crypto.randomUUID(),
       x: shape.x + 20,
       y: shape.y + 20,
-      points: shape.points ? shape.points.map((p, idx) => idx % 2 === 0 ? p + 20 : p + 20) : undefined,
+      points: shape.points ? [...shape.points] : undefined,
     };
     const newShapes = [...state.shapes, duplicated];
     const newHistory = state.history.slice(0, state.historyStep + 1);
