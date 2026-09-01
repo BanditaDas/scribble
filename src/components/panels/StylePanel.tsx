@@ -38,22 +38,16 @@ export const StylePanel = () => {
   const setSelectedId = useCanvasStore((state) => state.setSelectedId);
 
   const selectedShape = shapes.find((s) => s.id === selectedId);
-
-  // If no shape is selected and the user is in select mode, hide the panel
-  if (!selectedShape && activeTool === TOOLS.SELECT) {
-    return null;
-  }
-
   const targetType = selectedShape ? selectedShape.type : activeTool;
 
-  const currentStroke = (selectedShape?.stroke !== undefined ? selectedShape.stroke : activeStyle.stroke) || '';
-  const currentFill = (selectedShape?.fill !== undefined ? selectedShape.fill : activeStyle.fill) || 'transparent';
-  const currentStrokeWidth = selectedShape?.strokeWidth !== undefined ? selectedShape.strokeWidth : (activeStyle.strokeWidth || 2);
-  const currentStrokeStyle = selectedShape?.strokeStyle || activeStyle.strokeStyle || 'solid';
-  const currentOpacity = Math.round((selectedShape?.opacity !== undefined ? selectedShape.opacity : (activeStyle.opacity ?? 1)) * 100);
-  const currentCornerRadius = selectedShape?.cornerRadius !== undefined ? selectedShape.cornerRadius : (activeStyle.cornerRadius || 0);
-  const currentFontSize = selectedShape?.fontSize !== undefined ? selectedShape.fontSize : (activeStyle.fontSize || 20);
-  const currentFontFamily = selectedShape?.fontFamily || activeStyle.fontFamily || 'Inter, sans-serif';
+  const currentStroke = (selectedShape?.stroke !== undefined ? selectedShape.stroke : activeStyle?.stroke) || '';
+  const currentFill = (selectedShape?.fill !== undefined ? selectedShape.fill : activeStyle?.fill) || 'transparent';
+  const currentStrokeWidth = selectedShape?.strokeWidth !== undefined ? selectedShape.strokeWidth : (activeStyle?.strokeWidth || 2);
+  const currentStrokeStyle = selectedShape?.strokeStyle || activeStyle?.strokeStyle || 'solid';
+  const currentOpacity = Math.round((selectedShape?.opacity !== undefined ? selectedShape.opacity : (activeStyle?.opacity ?? 1)) * 100);
+  const currentCornerRadius = selectedShape?.cornerRadius !== undefined ? selectedShape.cornerRadius : (activeStyle?.cornerRadius || 0);
+  const currentFontSize = selectedShape?.fontSize !== undefined ? selectedShape.fontSize : (activeStyle?.fontSize || 20);
+  const currentFontFamily = selectedShape?.fontFamily || activeStyle?.fontFamily || 'Inter, sans-serif';
 
   const [strokeHexInput, setStrokeHexInput] = useState(currentStroke);
   const [fillHexInput, setFillHexInput] = useState(currentFill);
@@ -64,6 +58,11 @@ export const StylePanel = () => {
     setStrokeHexInput(currentStroke);
     setFillHexInput(currentFill);
   }, [selectedShape?.id, currentStroke, currentFill]);
+
+  // If no shape is selected and the user is in select mode, hide the panel
+  if (!selectedShape && activeTool === TOOLS.SELECT) {
+    return null;
+  }
 
   const handleColorChange = (key: 'stroke' | 'fill', color: string) => {
     if (selectedShape) {

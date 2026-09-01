@@ -135,21 +135,31 @@ export const useCanvasStore = create<CanvasState>((set) => ({
   }),
 
   updateShape: (id, newProps, saveHistory = true) => set((state) => {
+    const targetShape = state.shapes.find((s) => s.id === id);
     const newShapes = state.shapes.map((shape) =>
       shape.id === id ? { ...shape, ...newProps } : shape
     );
 
     let nextActiveStyle = state.activeStyle;
-    if (state.selectedId === id) {
+    if (state.selectedId === id && targetShape) {
+      const shapeType = newProps.type || targetShape.type;
       const styleUpdates: Partial<ActiveStyle> = {};
       if (newProps.stroke !== undefined) styleUpdates.stroke = newProps.stroke;
-      if (newProps.fill !== undefined) styleUpdates.fill = newProps.fill;
+      if (newProps.fill !== undefined && (shapeType === 'rectangle' || shapeType === 'ellipse')) {
+        styleUpdates.fill = newProps.fill;
+      }
       if (newProps.strokeWidth !== undefined) styleUpdates.strokeWidth = newProps.strokeWidth;
       if (newProps.strokeStyle !== undefined) styleUpdates.strokeStyle = newProps.strokeStyle;
       if (newProps.opacity !== undefined) styleUpdates.opacity = newProps.opacity;
-      if (newProps.cornerRadius !== undefined) styleUpdates.cornerRadius = newProps.cornerRadius;
-      if (newProps.fontSize !== undefined) styleUpdates.fontSize = newProps.fontSize;
-      if (newProps.fontFamily !== undefined) styleUpdates.fontFamily = newProps.fontFamily;
+      if (newProps.cornerRadius !== undefined && shapeType === 'rectangle') {
+        styleUpdates.cornerRadius = newProps.cornerRadius;
+      }
+      if (newProps.fontSize !== undefined && shapeType === 'text') {
+        styleUpdates.fontSize = newProps.fontSize;
+      }
+      if (newProps.fontFamily !== undefined && shapeType === 'text') {
+        styleUpdates.fontFamily = newProps.fontFamily;
+      }
 
       if (Object.keys(styleUpdates).length > 0) {
         nextActiveStyle = { ...state.activeStyle, ...styleUpdates };
