@@ -19,11 +19,15 @@ import {
   Check
 } from 'lucide-react';
 import { useCanvasStore } from '../../store/canvasStore';
-import { COLORS } from '../../lib/constants';
+import { COLORS, TOOLS } from '../../lib/constants';
 
 export const StylePanel = () => {
   const shapes = useCanvasStore((state) => state.shapes);
   const selectedId = useCanvasStore((state) => state.selectedId);
+  const activeTool = useCanvasStore((state) => state.activeTool);
+  const activeStyle = useCanvasStore((state) => state.activeStyle);
+  const setActiveStyle = useCanvasStore((state) => state.setActiveStyle);
+  const setActiveTool = useCanvasStore((state) => state.setActiveTool);
   const updateShape = useCanvasStore((state) => state.updateShape);
   const deleteShape = useCanvasStore((state) => state.deleteShape);
   const duplicateShape = useCanvasStore((state) => state.duplicateShape);
@@ -35,22 +39,37 @@ export const StylePanel = () => {
 
   const selectedShape = shapes.find((s) => s.id === selectedId);
 
-  const [strokeHexInput, setStrokeHexInput] = useState('');
-  const [fillHexInput, setFillHexInput] = useState('');
+  // If no shape is selected and the user is in select mode, hide the panel
+  if (!selectedShape && activeTool === TOOLS.SELECT) {
+    return null;
+  }
+
+  const targetType = selectedShape ? selectedShape.type : activeTool;
+
+  const currentStroke = (selectedShape?.stroke !== undefined ? selectedShape.stroke : activeStyle.stroke) || '';
+  const currentFill = (selectedShape?.fill !== undefined ? selectedShape.fill : activeStyle.fill) || 'transparent';
+  const currentStrokeWidth = selectedShape?.strokeWidth !== undefined ? selectedShape.strokeWidth : (activeStyle.strokeWidth || 2);
+  const currentStrokeStyle = selectedShape?.strokeStyle || activeStyle.strokeStyle || 'solid';
+  const currentOpacity = Math.round((selectedShape?.opacity !== undefined ? selectedShape.opacity : (activeStyle.opacity ?? 1)) * 100);
+  const currentCornerRadius = selectedShape?.cornerRadius !== undefined ? selectedShape.cornerRadius : (activeStyle.cornerRadius || 0);
+  const currentFontSize = selectedShape?.fontSize !== undefined ? selectedShape.fontSize : (activeStyle.fontSize || 20);
+  const currentFontFamily = selectedShape?.fontFamily || activeStyle.fontFamily || 'Inter, sans-serif';
+
+  const [strokeHexInput, setStrokeHexInput] = useState(currentStroke);
+  const [fillHexInput, setFillHexInput] = useState(currentFill);
   const strokeColorInputRef = useRef<HTMLInputElement>(null);
   const fillColorInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (selectedShape) {
-      setStrokeHexInput(selectedShape.stroke || '');
-      setFillHexInput(selectedShape.fill || '');
-    }
-  }, [selectedShape?.id, selectedShape?.stroke, selectedShape?.fill]);
-
-  if (!selectedShape) return null;
+    setStrokeHexInput(currentStroke);
+    setFillHexInput(currentFill);
+  }, [selectedShape?.id, currentStroke, currentFill]);
 
   const handleColorChange = (key: 'stroke' | 'fill', color: string) => {
-    updateShape(selectedShape.id, { [key]: color });
+    if (selectedShape) {
+      updateShape(selectedShape.id, { [key]: color });
+    }
+    setActiveStyle({ [key]: color });
     if (key === 'stroke') setStrokeHexInput(color);
     if (key === 'fill') setFillHexInput(color);
   };
@@ -60,27 +79,62 @@ export const StylePanel = () => {
     if (!formatted.startsWith('#') && formatted !== 'transparent') {
       formatted = `#${formatted}`;
     }
-    updateShape(selectedShape.id, { [key]: formatted });
+    if (selectedShape) {
+      updateShape(selectedShape.id, { [key]: formatted });
+    }
+    setActiveStyle({ [key]: formatted });
   };
 
   const handleWidthChange = (strokeWidth: number) => {
-    updateShape(selectedShape.id, { strokeWidth: Math.max(1, Math.min(40, strokeWidth)) });
+    const width = Math.max(1, Math.min(40, strokeWidth));
+    if (selectedShape) {
+      updateShape(selectedShape.id, { strokeWidth: width });
+    }
+    setActiveStyle({ strokeWidth: width });
   };
 
   const handleStrokeStyleChange = (strokeStyle: 'solid' | 'dashed' | 'dotted') => {
-    updateShape(selectedShape.id, { strokeStyle });
+    if (selectedShape) {
+      updateShape(selectedShape.id, { strokeStyle });
+    }
+    setActiveStyle({ strokeStyle });
   };
 
   const handleOpacityChange = (opacity: number) => {
-    updateShape(selectedShape.id, { opacity: Math.max(0, Math.min(1, opacity)) });
+    const clamped = Math.max(0, Math.min(1, opacity));
+    if (selectedShape) {
+      updateShape(selectedShape.id, { opacity: clamped });
+    }
+    setActiveStyle({ opacity: clamped });
   };
 
   const handleCornerRadiusChange = (cornerRadius: number) => {
-    updateShape(selectedShape.id, { cornerRadius: Math.max(0, Math.min(60, cornerRadius)) });
+    const clamped = Math.max(0, Math.min(60, cornerRadius));
+    if (selectedShape) {
+      updateShape(selectedShape.id, { cornerRadius: clamped });
+    }
+    setActiveStyle({ cornerRadius: clamped });
   };
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
-    updateShape(selectedShape.id, { text: e.target.value });
+    if (selectedShape) {
+      updateShape(selectedShape.id, { text: e.target.value });
+    }
+  };
+
+  const handleFontSizeChange = (fontSize: number) => {
+    const size = Math.max(8, Math.min(300, fontSize));
+    if (selectedShape) {
+      updateShape(selectedShape.id, { fontSize: size });
+    }
+    setActiveStyle({ fontSize: size });
+  };
+
+  const handleFontFamilyChange = (fontFamily: string) => {
+    if (selectedShape) {
+      updateShape(selectedShape.id, { fontFamily });
+    }
+    setActiveStyle({ fontFamily });
   };
 
   // Curated color swatches
@@ -166,8 +220,7 @@ export const StylePanel = () => {
     }
   };
 
-  const isShapeFilled = selectedShape.type === 'rectangle' || selectedShape.type === 'ellipse';
-  const currentOpacity = Math.round((selectedShape.opacity ?? 1) * 100);
+  const isShapeFilled = targetType === 'rectangle' || targetType === 'ellipse';
 
   return (
     <div className="absolute right-6 top-20 w-72 max-h-[calc(100vh-100px)] overflow-y-auto bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl shadow-xl shadow-black/5 dark:shadow-black/30 border border-gray-200/90 dark:border-zinc-700/90 p-4 pointer-events-auto z-20 transition-all duration-200 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-zinc-700">
@@ -175,104 +228,124 @@ export const StylePanel = () => {
       {/* Header with Shape Badge and Quick Actions */}
       <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-zinc-800">
         <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 dark:bg-zinc-800 rounded-lg border border-gray-200/60 dark:border-zinc-700/60">
-          {getShapeIcon(selectedShape.type)}
+          {getShapeIcon(targetType)}
           <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider jetbrains-mono">
-            {selectedShape.type}
+            {targetType}
           </span>
         </div>
 
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => duplicateShape(selectedShape.id)}
-            title="Duplicate Shape (Ctrl+D)"
-            className="p-1.5 rounded-lg text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
-          >
-            <Copy size={15} />
-          </button>
-          <button
-            type="button"
-            onClick={() => deleteShape(selectedShape.id)}
-            title="Delete Shape"
-            className="p-1.5 rounded-lg text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
-          >
-            <Trash2 size={15} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedId(null)}
-            title="Deselect (Esc)"
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
-          >
-            <X size={15} />
-          </button>
-        </div>
+        {selectedShape ? (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => duplicateShape(selectedShape.id)}
+              title="Duplicate Shape (Ctrl+D)"
+              className="p-1.5 rounded-lg text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+            >
+              <Copy size={15} />
+            </button>
+            <button
+              type="button"
+              onClick={() => deleteShape(selectedShape.id)}
+              title="Delete Shape"
+              className="p-1.5 rounded-lg text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+            >
+              <Trash2 size={15} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedId(null)}
+              title="Deselect (Esc)"
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+            >
+              <X size={15} />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-md bg-gray-100 dark:bg-zinc-800 text-gray-400">
+              Tool Style
+            </span>
+            <button
+              type="button"
+              onClick={() => setActiveTool(TOOLS.SELECT)}
+              title="Close (V)"
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+            >
+              <X size={15} />
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Layer Ordering Bar */}
-      <div className="flex items-center justify-between mt-3 px-2 py-1 bg-gray-50 dark:bg-zinc-800/60 rounded-xl border border-gray-100 dark:border-zinc-800">
-        <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Layer</span>
-        <div className="flex items-center gap-0.5">
-          <button
-            type="button"
-            onClick={() => sendToBack(selectedShape.id)}
-            title="Send to Back"
-            className="p-1 rounded text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-white dark:hover:bg-zinc-700 transition-colors"
-          >
-            <SendToBack size={14} />
-          </button>
-          <button
-            type="button"
-            onClick={() => sendBackward(selectedShape.id)}
-            title="Send Backward"
-            className="p-1 rounded text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-white dark:hover:bg-zinc-700 transition-colors"
-          >
-            <ArrowDown size={14} />
-          </button>
-          <button
-            type="button"
-            onClick={() => bringForward(selectedShape.id)}
-            title="Bring Forward"
-            className="p-1 rounded text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-white dark:hover:bg-zinc-700 transition-colors"
-          >
-            <ArrowUp size={14} />
-          </button>
-          <button
-            type="button"
-            onClick={() => bringToFront(selectedShape.id)}
-            title="Bring to Front"
-            className="p-1 rounded text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-white dark:hover:bg-zinc-700 transition-colors"
-          >
-            <BringToFront size={14} />
-          </button>
+      {/* Layer Ordering Bar (Only for selected shapes on canvas) */}
+      {selectedShape && (
+        <div className="flex items-center justify-between mt-3 px-2 py-1 bg-gray-50 dark:bg-zinc-800/60 rounded-xl border border-gray-100 dark:border-zinc-800">
+          <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Layer</span>
+          <div className="flex items-center gap-0.5">
+            <button
+              type="button"
+              onClick={() => sendToBack(selectedShape.id)}
+              title="Send to Back"
+              className="p-1 rounded text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-white dark:hover:bg-zinc-700 transition-colors"
+            >
+              <SendToBack size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={() => sendBackward(selectedShape.id)}
+              title="Send Backward"
+              className="p-1 rounded text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-white dark:hover:bg-zinc-700 transition-colors"
+            >
+              <ArrowDown size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={() => bringForward(selectedShape.id)}
+              title="Bring Forward"
+              className="p-1 rounded text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-white dark:hover:bg-zinc-700 transition-colors"
+            >
+              <ArrowUp size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={() => bringToFront(selectedShape.id)}
+              title="Bring to Front"
+              className="p-1 rounded text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-white dark:hover:bg-zinc-700 transition-colors"
+            >
+              <BringToFront size={14} />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="space-y-4 mt-4">
         
         {/* TEXT SPECIFIC CONTROLS */}
-        {selectedShape.type === 'text' && (
+        {targetType === 'text' && (
           <div className="space-y-3 pb-3 border-b border-gray-100 dark:border-zinc-800">
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1.5 jetbrains-mono">
-                Content
-              </label>
-              <textarea
-                value={selectedShape.text || ''}
-                onChange={handleTextChange}
-                rows={2}
-                placeholder="Type text..."
-                className="w-full px-2.5 py-1.5 border border-gray-200 dark:border-zinc-700 rounded-xl text-sm focus:outline-none focus:border-[#FF5A36] focus:ring-1 focus:ring-[#FF5A36] dark:bg-zinc-800/80 dark:text-gray-100 transition-all resize-none shadow-xs"
-              />
-            </div>
+            {selectedShape && (
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1.5 jetbrains-mono">
+                  Content
+                </label>
+                <textarea
+                  value={selectedShape.text || ''}
+                  onChange={handleTextChange}
+                  rows={2}
+                  placeholder="Type text..."
+                  className="w-full px-2.5 py-1.5 border border-gray-200 dark:border-zinc-700 rounded-xl text-sm focus:outline-none focus:border-[#FF5A36] focus:ring-1 focus:ring-[#FF5A36] dark:bg-zinc-800/80 dark:text-gray-100 transition-all resize-none shadow-xs"
+                />
+              </div>
+            )}
 
             <div>
               <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1.5 jetbrains-mono">
                 Font Family
               </label>
               <select
-                value={selectedShape.fontFamily || 'Inter, sans-serif'}
-                onChange={(e) => updateShape(selectedShape.id, { fontFamily: e.target.value })}
+                value={currentFontFamily}
+                onChange={(e) => handleFontFamilyChange(e.target.value)}
                 className="w-full px-2.5 py-1.5 border border-gray-200 dark:border-zinc-700 rounded-xl text-sm focus:outline-none focus:border-[#FF5A36] focus:ring-1 focus:ring-[#FF5A36] dark:bg-zinc-800/80 dark:text-gray-100 transition-all shadow-xs"
               >
                 {fontFamilies.map((font) => (
@@ -289,19 +362,19 @@ export const StylePanel = () => {
                   Font Size
                 </label>
                 <span className="text-xs font-bold text-[#FF5A36] jetbrains-mono">
-                  {selectedShape.fontSize || 20}px
+                  {currentFontSize}px
                 </span>
               </div>
 
               {/* Font Size Preset Pad */}
               <div className="grid grid-cols-4 gap-1.5 mb-2 bg-gray-100/80 dark:bg-zinc-800/80 p-1 rounded-xl border border-gray-200/60 dark:border-zinc-700/60">
                 {sizePresets.map(({ label, size }) => {
-                  const isActive = (selectedShape.fontSize || 20) === size;
+                  const isActive = currentFontSize === size;
                   return (
                     <button
                       key={label}
                       type="button"
-                      onClick={() => updateShape(selectedShape.id, { fontSize: size })}
+                      onClick={() => handleFontSizeChange(size)}
                       className={`py-1 text-xs font-semibold rounded-lg transition-all flex flex-col items-center justify-center ${
                         isActive
                           ? 'bg-[#FF5A36] text-white shadow-xs'
@@ -319,10 +392,7 @@ export const StylePanel = () => {
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={() => {
-                    const current = selectedShape.fontSize || 20;
-                    updateShape(selectedShape.id, { fontSize: Math.max(8, current - 2) });
-                  }}
+                  onClick={() => handleFontSizeChange(Math.max(8, currentFontSize - 2))}
                   className="w-8 h-8 flex items-center justify-center rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 transition-colors shadow-xs"
                   title="Decrease font size"
                 >
@@ -334,11 +404,11 @@ export const StylePanel = () => {
                     type="number"
                     min="8"
                     max="200"
-                    value={selectedShape.fontSize || 20}
+                    value={currentFontSize}
                     onChange={(e) => {
                       const val = Number(e.target.value);
                       if (val >= 1 && val <= 300) {
-                        updateShape(selectedShape.id, { fontSize: val });
+                        handleFontSizeChange(val);
                       }
                     }}
                     className="w-full text-center py-1 px-2 border border-gray-200 dark:border-zinc-700 rounded-xl text-sm font-semibold bg-white dark:bg-zinc-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-[#FF5A36] focus:ring-1 focus:ring-[#FF5A36] transition-colors shadow-xs"
@@ -350,10 +420,7 @@ export const StylePanel = () => {
 
                 <button
                   type="button"
-                  onClick={() => {
-                    const current = selectedShape.fontSize || 20;
-                    updateShape(selectedShape.id, { fontSize: Math.min(200, current + 2) });
-                  }}
+                  onClick={() => handleFontSizeChange(Math.min(200, currentFontSize + 2))}
                   className="w-8 h-8 flex items-center justify-center rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 transition-colors shadow-xs"
                   title="Increase font size"
                 >
@@ -364,27 +431,27 @@ export const StylePanel = () => {
           </div>
         )}
 
-        {/* STROKE COLOR SECTION */}
+        {/* STROKE / TEXT COLOR SECTION */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider jetbrains-mono">
-              {selectedShape.type === 'text' ? 'Text Color' : 'Stroke Color'}
+              {targetType === 'text' ? 'Text Color' : 'Stroke Color'}
             </label>
             <div className="flex items-center gap-1.5">
               <div 
                 className="w-3.5 h-3.5 rounded-full border border-gray-300 dark:border-zinc-600 shadow-xs"
-                style={{ backgroundColor: selectedShape.stroke === 'transparent' ? '#fff' : selectedShape.stroke }}
+                style={{ backgroundColor: currentStroke === 'transparent' ? '#fff' : currentStroke }}
               />
               <span className="text-[11px] font-mono text-gray-500 dark:text-gray-400">
-                {selectedShape.stroke || 'None'}
+                {currentStroke || 'None'}
               </span>
             </div>
           </div>
 
           {/* Color Grid */}
           <div className="grid grid-cols-6 gap-1.5">
-            {(selectedShape.type === 'text' ? textColors : strokeColors).map((c) => {
-              const isSelected = selectedShape.stroke === c;
+            {(targetType === 'text' ? textColors : strokeColors).map((c) => {
+              const isSelected = currentStroke.toLowerCase() === c.toLowerCase();
               const isTransparent = c === 'transparent';
               return (
                 <button
@@ -446,7 +513,7 @@ export const StylePanel = () => {
               <input
                 ref={strokeColorInputRef}
                 type="color"
-                value={selectedShape.stroke?.startsWith('#') ? selectedShape.stroke : '#000000'}
+                value={currentStroke.startsWith('#') ? currentStroke : '#000000'}
                 onChange={(e) => handleColorChange('stroke', e.target.value)}
                 className="sr-only"
               />
@@ -455,21 +522,21 @@ export const StylePanel = () => {
         </div>
 
         {/* STROKE WIDTH & STYLE SECTION */}
-        {selectedShape.type !== 'text' && (
+        {targetType !== 'text' && (
           <div className="space-y-3 pt-2 border-t border-gray-100 dark:border-zinc-800">
             <div className="flex justify-between items-center">
               <label className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider jetbrains-mono">
                 Stroke Width
               </label>
               <span className="text-xs font-bold text-[#FF5A36] jetbrains-mono">
-                {selectedShape.strokeWidth || 2}px
+                {currentStrokeWidth}px
               </span>
             </div>
 
             {/* Width Presets */}
             <div className="grid grid-cols-4 gap-1.5 bg-gray-100/80 dark:bg-zinc-800/80 p-1 rounded-xl border border-gray-200/60 dark:border-zinc-700/60">
               {strokeWidthPresets.map(({ label, width, heightClass }) => {
-                const isActive = (selectedShape.strokeWidth || 2) === width;
+                const isActive = currentStrokeWidth === width;
                 return (
                   <button
                     key={label}
@@ -492,7 +559,7 @@ export const StylePanel = () => {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => handleWidthChange((selectedShape.strokeWidth || 2) - 1)}
+                onClick={() => handleWidthChange(currentStrokeWidth - 1)}
                 className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 transition-colors shadow-xs"
                 title="Decrease stroke width"
               >
@@ -503,14 +570,14 @@ export const StylePanel = () => {
                 type="range"
                 min="1"
                 max="30"
-                value={selectedShape.strokeWidth || 2}
+                value={currentStrokeWidth}
                 onChange={(e) => handleWidthChange(Number(e.target.value))}
                 className="flex-1 accent-[#FF5A36] h-1.5 bg-gray-200 dark:bg-zinc-700 rounded-lg cursor-pointer"
               />
 
               <button
                 type="button"
-                onClick={() => handleWidthChange((selectedShape.strokeWidth || 2) + 1)}
+                onClick={() => handleWidthChange(currentStrokeWidth + 1)}
                 className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 transition-colors shadow-xs"
                 title="Increase stroke width"
               >
@@ -525,8 +592,7 @@ export const StylePanel = () => {
               </label>
               <div className="grid grid-cols-3 gap-1 bg-gray-100/80 dark:bg-zinc-800/80 p-1 rounded-xl border border-gray-200/60 dark:border-zinc-700/60">
                 {strokeStyles.map(({ id, label }) => {
-                  const currentStyle = selectedShape.strokeStyle || 'solid';
-                  const isActive = currentStyle === id;
+                  const isActive = currentStrokeStyle === id;
                   return (
                     <button
                       key={id}
@@ -562,10 +628,10 @@ export const StylePanel = () => {
               <div className="flex items-center gap-1.5">
                 <div 
                   className="w-3.5 h-3.5 rounded-full border border-gray-300 dark:border-zinc-600 shadow-xs"
-                  style={{ backgroundColor: selectedShape.fill === 'transparent' ? '#fff' : selectedShape.fill }}
+                  style={{ backgroundColor: currentFill === 'transparent' ? '#fff' : currentFill }}
                 />
                 <span className="text-[11px] font-mono text-gray-500 dark:text-gray-400">
-                  {selectedShape.fill || 'None'}
+                  {currentFill || 'None'}
                 </span>
               </div>
             </div>
@@ -573,7 +639,7 @@ export const StylePanel = () => {
             {/* Fill Color Grid */}
             <div className="grid grid-cols-6 gap-1.5">
               {fillColors.map((c) => {
-                const isSelected = selectedShape.fill === c;
+                const isSelected = currentFill.toLowerCase() === c.toLowerCase();
                 const isTransparent = c === 'transparent';
                 return (
                   <button
@@ -590,130 +656,87 @@ export const StylePanel = () => {
                       backgroundImage: isTransparent
                         ? 'linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd), linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd)'
                         : 'none',
-                      backgroundPosition: '0 0, 3px 3px',
-                      backgroundSize: '6px 6px'
-                    }}
-                    title={c}
-                  >
-                    {isSelected && (
-                      <Check 
-                        size={12} 
-                        className={c === COLORS.white || c === '#F1F5F9' || c.startsWith('#F') || isTransparent ? 'text-gray-900' : 'text-white'} 
-                        strokeWidth={3}
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Custom Hex / Pipette Row for Fill */}
-            <div className="flex items-center gap-1.5 pt-1">
-              <div className="relative flex-1">
-                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-gray-400 dark:text-gray-500">
-                  HEX
-                </span>
-                <input
-                  type="text"
-                  value={fillHexInput}
-                  onChange={(e) => {
-                    setFillHexInput(e.target.value);
-                    handleCustomHexSubmit('fill', e.target.value);
+                    backgroundPosition: '0 0, 3px 3px',
+                    backgroundSize: '6px 6px'
                   }}
-                  placeholder="#FFFFFF"
-                  className="w-full pl-10 pr-2 py-1 text-xs font-mono font-medium border border-gray-200 dark:border-zinc-700 rounded-xl bg-gray-50 dark:bg-zinc-800/80 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-[#FF5A36] focus:ring-1 focus:ring-[#FF5A36] transition-colors"
-                />
-              </div>
-              
-              <button
-                type="button"
-                onClick={() => fillColorInputRef.current?.click()}
-                className="w-8 h-8 flex items-center justify-center rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800/80 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 transition-colors shadow-xs"
-                title="Pick Custom Fill Color"
-              >
-                <Pipette size={14} />
-                <input
-                  ref={fillColorInputRef}
-                  type="color"
-                  value={selectedShape.fill?.startsWith('#') ? selectedShape.fill : '#FFFFFF'}
-                  onChange={(e) => handleColorChange('fill', e.target.value)}
-                  className="sr-only"
-                />
-              </button>
-            </div>
+                  title={c}
+                >
+                  {isSelected && (
+                    <Check 
+                      size={12} 
+                      className={c === COLORS.white || c === '#F1F5F9' || c.startsWith('#F') || isTransparent ? 'text-gray-900' : 'text-white'} 
+                      strokeWidth={3}
+                    />
+                  )}
+                </button>
+              );
+            })}
           </div>
-        )}
 
-        {/* CORNER RADIUS (RECTANGLE ONLY) */}
-        {selectedShape.type === 'rectangle' && (
-          <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-zinc-800">
-            <div className="flex justify-between items-center">
-              <label className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider jetbrains-mono">
-                Corner Radius
-              </label>
-              <span className="text-xs font-bold text-[#FF5A36] jetbrains-mono">
-                {selectedShape.cornerRadius || 0}px
+          {/* Custom Hex / Pipette Row for Fill */}
+          <div className="flex items-center gap-1.5 pt-1">
+            <div className="relative flex-1">
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-gray-400 dark:text-gray-500">
+                HEX
               </span>
+              <input
+                type="text"
+                value={fillHexInput}
+                onChange={(e) => {
+                  setFillHexInput(e.target.value);
+                  handleCustomHexSubmit('fill', e.target.value);
+                }}
+                placeholder="#FFFFFF"
+                className="w-full pl-10 pr-2 py-1 text-xs font-mono font-medium border border-gray-200 dark:border-zinc-700 rounded-xl bg-gray-50 dark:bg-zinc-800/80 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-[#FF5A36] focus:ring-1 focus:ring-[#FF5A36] transition-colors"
+              />
             </div>
-
-            <div className="grid grid-cols-3 gap-1 bg-gray-100/80 dark:bg-zinc-800/80 p-1 rounded-xl border border-gray-200/60 dark:border-zinc-700/60">
-              {cornerRadiusPresets.map(({ label, radius }) => {
-                const isActive = (selectedShape.cornerRadius || 0) === radius;
-                return (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => handleCornerRadiusChange(radius)}
-                    className={`py-1 text-xs font-medium rounded-lg transition-all ${
-                      isActive
-                        ? 'bg-[#FF5A36] text-white shadow-xs'
-                        : 'text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-zinc-700'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-
-            <input
-              type="range"
-              min="0"
-              max="40"
-              value={selectedShape.cornerRadius || 0}
-              onChange={(e) => handleCornerRadiusChange(Number(e.target.value))}
-              className="w-full accent-[#FF5A36] h-1.5 bg-gray-200 dark:bg-zinc-700 rounded-lg cursor-pointer"
-            />
+            
+            <button
+              type="button"
+              onClick={() => fillColorInputRef.current?.click()}
+              className="w-8 h-8 flex items-center justify-center rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800/80 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 transition-colors shadow-xs"
+              title="Pick Custom Fill Color"
+            >
+              <Pipette size={14} />
+              <input
+                ref={fillColorInputRef}
+                type="color"
+                value={currentFill.startsWith('#') ? currentFill : '#FFFFFF'}
+                onChange={(e) => handleColorChange('fill', e.target.value)}
+                className="sr-only"
+              />
+            </button>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* OPACITY / TRANSPARENCY CONTROLS */}
+      {/* CORNER RADIUS (RECTANGLE ONLY) */}
+      {targetType === 'rectangle' && (
         <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-zinc-800">
           <div className="flex justify-between items-center">
             <label className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider jetbrains-mono">
-              Opacity
+              Corner Radius
             </label>
             <span className="text-xs font-bold text-[#FF5A36] jetbrains-mono">
-              {currentOpacity}%
+              {currentCornerRadius}px
             </span>
           </div>
 
-          {/* Quick Opacity Presets */}
-          <div className="grid grid-cols-4 gap-1 bg-gray-100/80 dark:bg-zinc-800/80 p-1 rounded-xl border border-gray-200/60 dark:border-zinc-700/60">
-            {opacityPresets.map((pct) => {
-              const isActive = Math.abs(currentOpacity - pct) < 3;
+          <div className="grid grid-cols-3 gap-1 bg-gray-100/80 dark:bg-zinc-800/80 p-1 rounded-xl border border-gray-200/60 dark:border-zinc-700/60">
+            {cornerRadiusPresets.map(({ label, radius }) => {
+              const isActive = currentCornerRadius === radius;
               return (
                 <button
-                  key={pct}
+                  key={label}
                   type="button"
-                  onClick={() => handleOpacityChange(pct / 100)}
+                  onClick={() => handleCornerRadiusChange(radius)}
                   className={`py-1 text-xs font-medium rounded-lg transition-all ${
                     isActive
                       ? 'bg-[#FF5A36] text-white shadow-xs'
                       : 'text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-zinc-700'
                   }`}
                 >
-                  {pct}%
+                  {label}
                 </button>
               );
             })}
@@ -722,14 +745,57 @@ export const StylePanel = () => {
           <input
             type="range"
             min="0"
-            max="100"
-            value={currentOpacity}
-            onChange={(e) => handleOpacityChange(Number(e.target.value) / 100)}
+            max="40"
+            value={currentCornerRadius}
+            onChange={(e) => handleCornerRadiusChange(Number(e.target.value))}
             className="w-full accent-[#FF5A36] h-1.5 bg-gray-200 dark:bg-zinc-700 rounded-lg cursor-pointer"
           />
         </div>
+      )}
 
+      {/* OPACITY / TRANSPARENCY CONTROLS */}
+      <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-zinc-800">
+        <div className="flex justify-between items-center">
+          <label className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider jetbrains-mono">
+            Opacity
+          </label>
+          <span className="text-xs font-bold text-[#FF5A36] jetbrains-mono">
+            {currentOpacity}%
+          </span>
+        </div>
+
+        {/* Quick Opacity Presets */}
+        <div className="grid grid-cols-4 gap-1 bg-gray-100/80 dark:bg-zinc-800/80 p-1 rounded-xl border border-gray-200/60 dark:border-zinc-700/60">
+          {opacityPresets.map((pct) => {
+            const isActive = Math.abs(currentOpacity - pct) < 3;
+            return (
+              <button
+                key={pct}
+                type="button"
+                onClick={() => handleOpacityChange(pct / 100)}
+                className={`py-1 text-xs font-medium rounded-lg transition-all ${
+                  isActive
+                    ? 'bg-[#FF5A36] text-white shadow-xs'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-zinc-700'
+                }`}
+              >
+                {pct}%
+              </button>
+            );
+          })}
+        </div>
+
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={currentOpacity}
+          onChange={(e) => handleOpacityChange(Number(e.target.value) / 100)}
+          className="w-full accent-[#FF5A36] h-1.5 bg-gray-200 dark:bg-zinc-700 rounded-lg cursor-pointer"
+        />
       </div>
+
     </div>
+  </div>
   );
 };

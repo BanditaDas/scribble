@@ -11,7 +11,10 @@ export const DEFAULT_PROPS = {
   stroke: COLORS.graphite,
   fill: COLORS.transparent,
   strokeWidth: 2,
-  fontFamily: 'Inter',
+  strokeStyle: 'solid' as const,
+  opacity: 1,
+  cornerRadius: 0,
+  fontFamily: 'Inter, sans-serif',
   fontSize: 20,
 };
 

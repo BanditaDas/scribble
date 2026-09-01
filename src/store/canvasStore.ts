@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { TOOLS } from '../lib/constants';
+import { TOOLS, COLORS, DEFAULT_PROPS } from '../lib/constants';
 
 export interface Shape {
   id: string;
@@ -21,6 +21,17 @@ export interface Shape {
   rotation?: number;
 }
 
+export interface ActiveStyle {
+  stroke: string;
+  fill: string;
+  strokeWidth: number;
+  strokeStyle: 'solid' | 'dashed' | 'dotted';
+  opacity: number;
+  cornerRadius: number;
+  fontSize: number;
+  fontFamily: string;
+}
+
 interface CanvasState {
   shapes: Shape[];
   history: Shape[][];
@@ -28,6 +39,8 @@ interface CanvasState {
   selectedId: string | null;
   editingTextId: string | null;
   activeTool: string;
+  activeStyle: ActiveStyle;
+  setActiveStyle: (style: Partial<ActiveStyle>) => void;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
   setTheme: (theme: 'light' | 'dark') => void;
@@ -57,10 +70,49 @@ export const useCanvasStore = create<CanvasState>((set) => ({
   selectedId: null,
   editingTextId: null,
   activeTool: TOOLS.SELECT,
+  activeStyle: {
+    stroke: COLORS.graphite,
+    fill: COLORS.transparent,
+    strokeWidth: DEFAULT_PROPS.strokeWidth,
+    strokeStyle: 'solid',
+    opacity: 1,
+    cornerRadius: 0,
+    fontSize: DEFAULT_PROPS.fontSize,
+    fontFamily: DEFAULT_PROPS.fontFamily,
+  },
   theme: 'light',
 
-  toggleTheme: () => set((state) => ({ theme: state.theme === 'light' ? 'dark' : 'light' })),
-  setTheme: (theme) => set({ theme }),
+  setActiveStyle: (style) => set((state) => ({
+    activeStyle: { ...state.activeStyle, ...style },
+  })),
+
+  toggleTheme: () => set((state) => {
+    const nextTheme = state.theme === 'light' ? 'dark' : 'light';
+    let nextStroke = state.activeStyle.stroke;
+    if (state.theme === 'light' && nextStroke === COLORS.graphite) {
+      nextStroke = COLORS.white;
+    } else if (state.theme === 'dark' && nextStroke === COLORS.white) {
+      nextStroke = COLORS.graphite;
+    }
+    return {
+      theme: nextTheme,
+      activeStyle: { ...state.activeStyle, stroke: nextStroke },
+    };
+  }),
+
+  setTheme: (theme) => set((state) => {
+    let nextStroke = state.activeStyle.stroke;
+    if (state.theme === 'light' && theme === 'dark' && nextStroke === COLORS.graphite) {
+      nextStroke = COLORS.white;
+    } else if (state.theme === 'dark' && theme === 'light' && nextStroke === COLORS.white) {
+      nextStroke = COLORS.graphite;
+    }
+    return {
+      theme,
+      activeStyle: { ...state.activeStyle, stroke: nextStroke },
+    };
+  }),
+
   setEditingTextId: (id) => set({ editingTextId: id }),
 
   loadInitialState: (shapes) => set({ shapes, history: [shapes], historyStep: 0 }),
@@ -86,12 +138,31 @@ export const useCanvasStore = create<CanvasState>((set) => ({
     const newShapes = state.shapes.map((shape) =>
       shape.id === id ? { ...shape, ...newProps } : shape
     );
+
+    let nextActiveStyle = state.activeStyle;
+    if (state.selectedId === id) {
+      const styleUpdates: Partial<ActiveStyle> = {};
+      if (newProps.stroke !== undefined) styleUpdates.stroke = newProps.stroke;
+      if (newProps.fill !== undefined) styleUpdates.fill = newProps.fill;
+      if (newProps.strokeWidth !== undefined) styleUpdates.strokeWidth = newProps.strokeWidth;
+      if (newProps.strokeStyle !== undefined) styleUpdates.strokeStyle = newProps.strokeStyle;
+      if (newProps.opacity !== undefined) styleUpdates.opacity = newProps.opacity;
+      if (newProps.cornerRadius !== undefined) styleUpdates.cornerRadius = newProps.cornerRadius;
+      if (newProps.fontSize !== undefined) styleUpdates.fontSize = newProps.fontSize;
+      if (newProps.fontFamily !== undefined) styleUpdates.fontFamily = newProps.fontFamily;
+
+      if (Object.keys(styleUpdates).length > 0) {
+        nextActiveStyle = { ...state.activeStyle, ...styleUpdates };
+      }
+    }
+
     if (!saveHistory) {
-      return { shapes: newShapes };
+      return { shapes: newShapes, activeStyle: nextActiveStyle };
     }
     const newHistory = state.history.slice(0, state.historyStep + 1);
     return {
       shapes: newShapes,
+      activeStyle: nextActiveStyle,
       history: [...newHistory, newShapes],
       historyStep: newHistory.length,
     };
@@ -213,8 +284,39 @@ export const useCanvasStore = create<CanvasState>((set) => ({
     };
   }),
 
-  setSelectedId: (id) => set({ selectedId: id }),
-  setActiveTool: (tool) => set({ activeTool: tool }),
+  setSelectedId: (id) => set((state) => {
+    if (!id) return { selectedId: null };
+    const shape = state.shapes.find((s) => s.id === id);
+    if (!shape) return { selectedId: id };
+
+    const updatedActiveStyle: ActiveStyle = { ...state.activeStyle };
+    if (shape.stroke) updatedActiveStyle.stroke = shape.stroke;
+    if (shape.fill && (shape.type === 'rectangle' || shape.type === 'ellipse')) {
+      updatedActiveStyle.fill = shape.fill;
+    }
+    if (shape.strokeWidth !== undefined) updatedActiveStyle.strokeWidth = shape.strokeWidth;
+    if (shape.strokeStyle) updatedActiveStyle.strokeStyle = shape.strokeStyle;
+    if (shape.opacity !== undefined) updatedActiveStyle.opacity = shape.opacity;
+    if (shape.cornerRadius !== undefined && shape.type === 'rectangle') {
+      updatedActiveStyle.cornerRadius = shape.cornerRadius;
+    }
+    if (shape.fontSize !== undefined && shape.type === 'text') {
+      updatedActiveStyle.fontSize = shape.fontSize;
+    }
+    if (shape.fontFamily && shape.type === 'text') {
+      updatedActiveStyle.fontFamily = shape.fontFamily;
+    }
+
+    return {
+      selectedId: id,
+      activeStyle: updatedActiveStyle,
+    };
+  }),
+
+  setActiveTool: (tool) => set((state) => ({
+    activeTool: tool,
+    selectedId: tool !== TOOLS.SELECT ? null : state.selectedId,
+  })),
   
   undo: () => set((state) => {
     if (state.historyStep === 0) return state;
