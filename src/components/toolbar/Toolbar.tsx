@@ -6,7 +6,8 @@ import {
   Minus, 
   ArrowRight, 
   PenTool, 
-  Type 
+  Type,
+  Eraser
 } from 'lucide-react';
 import { useCanvasStore } from '../../store/canvasStore';
 import { TOOLS } from '../../lib/constants';
@@ -26,6 +27,7 @@ export const Toolbar = () => {
     { id: 'divider-2' },
     { id: TOOLS.PEN, icon: <PenTool size={20} />, label: 'Pen (P)' },
     { id: TOOLS.TEXT, icon: <Type size={20} />, label: 'Text (T)' },
+    { id: TOOLS.ERASER, icon: <Eraser size={20} />, label: 'Eraser (E)' },
   ];
 
   return (

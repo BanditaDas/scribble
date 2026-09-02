@@ -48,6 +48,7 @@ interface CanvasState {
   addShape: (shape: Shape, saveHistory?: boolean) => void;
   updateShape: (id: string, newProps: Partial<Shape>, saveHistory?: boolean) => void;
   deleteShape: (id: string, saveHistory?: boolean) => void;
+  deleteShapes: (ids: string[], saveHistory?: boolean) => void;
   duplicateShape: (id: string) => void;
   bringToFront: (id: string) => void;
   sendToBack: (id: string) => void;
@@ -181,6 +182,26 @@ export const useCanvasStore = create<CanvasState>((set) => ({
   deleteShape: (id, saveHistory = true) => set((state) => {
     const newShapes = state.shapes.filter((shape) => shape.id !== id);
     const newSelectedId = state.selectedId === id ? null : state.selectedId;
+    if (!saveHistory) {
+      return {
+        shapes: newShapes,
+        selectedId: newSelectedId,
+      };
+    }
+    const newHistory = state.history.slice(0, state.historyStep + 1);
+    return {
+      shapes: newShapes,
+      history: [...newHistory, newShapes],
+      historyStep: newHistory.length,
+      selectedId: newSelectedId,
+    };
+  }),
+
+  deleteShapes: (ids, saveHistory = true) => set((state) => {
+    if (ids.length === 0) return state;
+    const idSet = new Set(ids);
+    const newShapes = state.shapes.filter((shape) => !idSet.has(shape.id));
+    const newSelectedId = state.selectedId && idSet.has(state.selectedId) ? null : state.selectedId;
     if (!saveHistory) {
       return {
         shapes: newShapes,

@@ -59,8 +59,8 @@ export const StylePanel = () => {
     setFillHexInput(currentFill);
   }, [selectedShape?.id, currentStroke, currentFill]);
 
-  // If no shape is selected and the user is in select mode, hide the panel
-  if (!selectedShape && activeTool === TOOLS.SELECT) {
+  // If no shape is selected and the user is in select or eraser mode, hide the panel
+  if (!selectedShape && (activeTool === TOOLS.SELECT || activeTool === TOOLS.ERASER)) {
     return null;
   }
 

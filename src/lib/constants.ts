@@ -26,4 +26,5 @@ export const TOOLS = {
   ARROW: 'arrow',
   PEN: 'pen',
   TEXT: 'text',
+  ERASER: 'eraser',
 };

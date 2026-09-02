@@ -61,11 +61,11 @@ export const useKeyboardShortcuts = () => {
         v: TOOLS.SELECT,
         r: TOOLS.RECTANGLE,
         o: TOOLS.ELLIPSE,
-        e: TOOLS.ELLIPSE,
         l: TOOLS.LINE,
         a: TOOLS.ARROW,
         p: TOOLS.PEN,
         t: TOOLS.TEXT,
+        e: TOOLS.ERASER,
       };
 
       if (toolMap[e.key.toLowerCase()]) {

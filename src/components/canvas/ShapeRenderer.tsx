@@ -41,14 +41,14 @@ export const ShapeRenderer = ({ shape, isSelected, onSelect, onChange }: ShapeRe
       }
     },
     onDblClick: (e: any) => {
-      if (shape.type === 'text') {
+      if (shape.type === 'text' && activeTool !== TOOLS.ERASER) {
         e?.cancelBubble && (e.cancelBubble = true);
         useCanvasStore.getState().setSelectedId(shape.id);
         useCanvasStore.getState().setEditingTextId(shape.id);
       }
     },
     onDblTap: (e: any) => {
-      if (shape.type === 'text') {
+      if (shape.type === 'text' && activeTool !== TOOLS.ERASER) {
         e?.cancelBubble && (e.cancelBubble = true);
         useCanvasStore.getState().setSelectedId(shape.id);
         useCanvasStore.getState().setEditingTextId(shape.id);
