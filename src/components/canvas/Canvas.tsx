@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Stage, Layer, Line } from 'react-konva';
+import { Stage, Layer } from 'react-konva';
 import { useCanvasStore, Shape } from '../../store/canvasStore';
 import { TOOLS } from '../../lib/constants';
 import { createShape } from '../../lib/shapeFactory';
@@ -112,7 +112,6 @@ export const Canvas = () => {
   const isErasingRef = useRef(false);
   const lastPointerPosRef = useRef<{ x: number; y: number } | null>(null);
   const erasedIdsRef = useRef<Set<string>>(new Set());
-  const [eraserTrail, setEraserTrail] = useState<number[]>([]);
   const stageRef = useRef<any>(null);
   
   const [dimensions, setDimensions] = useState({
@@ -149,7 +148,6 @@ export const Canvas = () => {
       if (isErasingRef.current) {
         isErasingRef.current = false;
         lastPointerPosRef.current = null;
-        setEraserTrail([]);
         if (erasedIdsRef.current.size > 0) {
           commitHistory();
           erasedIdsRef.current.clear();
@@ -192,7 +190,6 @@ export const Canvas = () => {
       isErasingRef.current = true;
       lastPointerPosRef.current = pos;
       erasedIdsRef.current = new Set<string>();
-      setEraserTrail([pos.x, pos.y]);
 
       const toDelete: string[] = [];
 
@@ -259,8 +256,6 @@ export const Canvas = () => {
 
       const lastPos = lastPointerPosRef.current || pos;
       lastPointerPosRef.current = pos;
-
-      setEraserTrail((prev) => [...prev, pos.x, pos.y]);
 
       const currentShapes = useCanvasStore.getState().shapes;
       const toDelete: string[] = [];
@@ -329,7 +324,6 @@ export const Canvas = () => {
       if (isErasingRef.current) {
         isErasingRef.current = false;
         lastPointerPosRef.current = null;
-        setEraserTrail([]);
         if (erasedIdsRef.current.size > 0) {
           commitHistory();
           erasedIdsRef.current.clear();
@@ -423,16 +417,6 @@ export const Canvas = () => {
               onChange={(newAttrs) => updateShape(shape.id, newAttrs, true)}
             />
           ))}
-          {eraserTrail.length >= 4 && (
-            <Line
-              points={eraserTrail}
-              stroke={theme === 'dark' ? 'rgba(255, 90, 54, 0.45)' : 'rgba(255, 90, 54, 0.35)'}
-              strokeWidth={18}
-              lineCap="round"
-              lineJoin="round"
-              listening={false}
-            />
-          )}
           {selectedId && !isDrawing && selectedId !== editingTextId && !['line', 'arrow'].includes(shapes.find(s => s.id === selectedId)?.type || '') && (
             <SelectionBox selectedId={selectedId} />
           )}
