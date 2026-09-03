@@ -60,7 +60,8 @@ const TextEditorOverlay = ({ shape, onUpdate, onFinish, onCancel }: TextEditorOv
     }
   };
 
-  const textColor = shape.stroke || (useCanvasStore.getState().theme === 'dark' ? '#FFFFFF' : '#2D2D2D');
+  const theme = useCanvasStore((state) => state.theme);
+  const textColor = shape.stroke || (theme === 'dark' ? '#FFFFFF' : '#2D2D2D');
 
   return (
     <textarea
@@ -72,13 +73,14 @@ const TextEditorOverlay = ({ shape, onUpdate, onFinish, onCancel }: TextEditorOv
       onKeyDown={handleKeyDown}
       onMouseDown={(e) => e.stopPropagation()}
       onTouchStart={(e) => e.stopPropagation()}
-      className="absolute z-20 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xs outline-none resize-none overflow-hidden placeholder-gray-400 dark:placeholder-gray-500 border border-dashed border-[#FF5A36] rounded-xs shadow-sm"
+      className="absolute z-20 bg-transparent outline-none resize-none overflow-hidden placeholder-gray-400 dark:placeholder-gray-500 border border-dashed border-[#FF5A36] rounded-xs"
       style={{
         top: Math.max(0, shape.y),
         left: Math.max(0, shape.x),
         fontSize: `${shape.fontSize || 20}px`,
         fontFamily: shape.fontFamily || 'Inter',
         color: textColor,
+        backgroundColor: 'transparent',
         lineHeight: 1.2,
         padding: '4px',
         minWidth: '140px',
