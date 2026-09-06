@@ -6,11 +6,22 @@ import { TOOLS, DEFAULT_PROPS } from '../../lib/constants';
 interface ShapeRendererProps {
   shape: Shape;
   isSelected: boolean;
-  onSelect: () => void;
+  onSelect: (e: any) => void;
   onChange: (newAttrs: any) => void;
+  onDragStart?: (e: any, shape: Shape) => void;
+  onDragMove?: (e: any, shape: Shape) => void;
+  onDragEnd?: (e: any, shape: Shape) => void;
 }
 
-export const ShapeRenderer = ({ shape, isSelected, onSelect, onChange }: ShapeRendererProps) => {
+export const ShapeRenderer = ({ 
+  shape, 
+  isSelected, 
+  onSelect, 
+  onChange,
+  onDragStart,
+  onDragMove,
+  onDragEnd,
+}: ShapeRendererProps) => {
   const shapeRef = useRef<any>(null);
   const isEditing = useCanvasStore((state) => state.editingTextId === shape.id);
   const activeTool = useCanvasStore((state) => state.activeTool);
@@ -49,8 +60,38 @@ export const ShapeRenderer = ({ shape, isSelected, onSelect, onChange }: ShapeRe
     lineCap,
     lineJoin,
     draggable: isSelected && activeTool === TOOLS.SELECT,
-    onClick: onSelect,
-    onTap: onSelect,
+    onClick: (e: any) => onSelect(e),
+    onTap: (e: any) => onSelect(e),
+    onMouseDown: (e: any) => {
+      if (activeTool === TOOLS.SELECT) {
+        const { selectedIds, setSelectedId } = useCanvasStore.getState();
+        if (e.evt?.shiftKey) {
+          // Handled on click
+        } else if (!selectedIds.includes(shape.id)) {
+          setSelectedId(shape.id);
+        }
+      }
+    },
+    onTouchStart: (e: any) => {
+      if (activeTool === TOOLS.SELECT) {
+        const { selectedIds, setSelectedId } = useCanvasStore.getState();
+        if (e.evt?.shiftKey) {
+          // Handled on tap
+        } else if (!selectedIds.includes(shape.id)) {
+          setSelectedId(shape.id);
+        }
+      }
+    },
+    onDragStart: (e: any) => {
+      if (onDragStart) {
+        onDragStart(e, shape);
+      }
+    },
+    onDragMove: (e: any) => {
+      if (onDragMove) {
+        onDragMove(e, shape);
+      }
+    },
     onMouseEnter: (e: any) => {
       if (activeTool === TOOLS.SELECT) {
         const container = e.target.getStage()?.container();
@@ -78,11 +119,15 @@ export const ShapeRenderer = ({ shape, isSelected, onSelect, onChange }: ShapeRe
       }
     },
     onDragEnd: (e: any) => {
-      onChange({
-        ...shape,
-        x: e.target.x(),
-        y: e.target.y(),
-      });
+      if (onDragEnd) {
+        onDragEnd(e, shape);
+      } else {
+        onChange({
+          ...shape,
+          x: e.target.x(),
+          y: e.target.y(),
+        });
+      }
     },
     onTransformEnd: (e: any) => {
       const node = shapeRef.current;
@@ -204,7 +249,7 @@ export const ShapeRenderer = ({ shape, isSelected, onSelect, onChange }: ShapeRe
           padding={4}
           lineHeight={1.2}
           visible={!isEditing}
-          draggable={isSelected && !isEditing}
+          draggable={isSelected && !isEditing && activeTool === TOOLS.SELECT}
         />
       );
     default:

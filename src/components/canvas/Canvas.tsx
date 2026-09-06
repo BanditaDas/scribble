@@ -1,9 +1,9 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Stage, Layer } from 'react-konva';
+import { Stage, Layer, Rect } from 'react-konva';
 import { useCanvasStore, Shape } from '../../store/canvasStore';
 import { TOOLS } from '../../lib/constants';
 import { createShape } from '../../lib/shapeFactory';
-import { shapeIntersectsEraser } from '../../lib/geometry';
+import { shapeIntersectsEraser, shapeIntersectsBox, BoundingBox } from '../../lib/geometry';
 import { ShapeRenderer } from './ShapeRenderer';
 import { SelectionBox } from './SelectionBox';
 import { LineSelectionBox } from './LineSelectionBox';
@@ -96,19 +96,94 @@ export const Canvas = () => {
   const shapes = useCanvasStore((state) => state.shapes);
   const activeTool = useCanvasStore((state) => state.activeTool);
   const selectedId = useCanvasStore((state) => state.selectedId);
+  const selectedIds = useCanvasStore((state) => state.selectedIds);
   const editingTextId = useCanvasStore((state) => state.editingTextId);
   const setEditingTextId = useCanvasStore((state) => state.setEditingTextId);
   const setActiveTool = useCanvasStore((state) => state.setActiveTool);
   const theme = useCanvasStore((state) => state.theme);
   const addShape = useCanvasStore((state) => state.addShape);
   const updateShape = useCanvasStore((state) => state.updateShape);
+  const updateShapes = useCanvasStore((state) => state.updateShapes);
   const deleteShape = useCanvasStore((state) => state.deleteShape);
   const deleteShapes = useCanvasStore((state) => state.deleteShapes);
   const commitHistory = useCanvasStore((state) => state.commitHistory);
   const setSelectedId = useCanvasStore((state) => state.setSelectedId);
+  const setSelectedIds = useCanvasStore((state) => state.setSelectedIds);
+  const toggleSelectId = useCanvasStore((state) => state.toggleSelectId);
+  const clearSelection = useCanvasStore((state) => state.clearSelection);
   
   const [isDrawing, setIsDrawing] = useState(false);
   const currentShapeId = useRef<string | null>(null);
+
+  // Marquee selection state
+  const [marqueeBox, setMarqueeBox] = useState<{
+    startX: number;
+    startY: number;
+    currentX: number;
+    currentY: number;
+  } | null>(null);
+  const isMarqueeSelectingRef = useRef(false);
+  const marqueeInitialSelectionRef = useRef<string[]>([]);
+
+  // Synchronized multi-shape drag state
+  const dragStartPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
+  const dragOriginRef = useRef<{ x: number; y: number } | null>(null);
+
+  const handleShapeDragStart = (e: any, shape: Shape) => {
+    const currentSelectedIds = useCanvasStore.getState().selectedIds;
+    const currentShapes = useCanvasStore.getState().shapes;
+    if (currentSelectedIds.includes(shape.id) && currentSelectedIds.length > 1) {
+      const posMap = new Map<string, { x: number; y: number }>();
+      for (const id of currentSelectedIds) {
+        const s = currentShapes.find((item) => item.id === id);
+        if (s) {
+          posMap.set(id, { x: s.x, y: s.y });
+        }
+      }
+      dragStartPositionsRef.current = posMap;
+      dragOriginRef.current = { x: e.target.x(), y: e.target.y() };
+    } else {
+      dragStartPositionsRef.current.clear();
+      dragOriginRef.current = null;
+    }
+  };
+
+  const handleShapeDragMove = (e: any, shape: Shape) => {
+    if (dragOriginRef.current && dragStartPositionsRef.current.size > 1) {
+      const dx = e.target.x() - dragOriginRef.current.x;
+      const dy = e.target.y() - dragOriginRef.current.y;
+      const stage = stageRef.current;
+      if (stage) {
+        for (const [id, startPos] of dragStartPositionsRef.current.entries()) {
+          if (id !== shape.id) {
+            const node = stage.findOne(`#${id}`);
+            if (node) {
+              node.x(startPos.x + dx);
+              node.y(startPos.y + dy);
+            }
+          }
+        }
+        stage.batchDraw();
+      }
+    }
+  };
+
+  const handleShapeDragEnd = (e: any, shape: Shape) => {
+    if (dragOriginRef.current && dragStartPositionsRef.current.size > 1) {
+      const dx = e.target.x() - dragOriginRef.current.x;
+      const dy = e.target.y() - dragOriginRef.current.y;
+      const updates = Array.from(dragStartPositionsRef.current.entries()).map(([id, startPos]) => ({
+        id,
+        x: startPos.x + dx,
+        y: startPos.y + dy,
+      }));
+      updateShapes(updates, true);
+      dragStartPositionsRef.current.clear();
+      dragOriginRef.current = null;
+    } else {
+      updateShape(shape.id, { x: e.target.x(), y: e.target.y() }, true);
+    }
+  };
 
   // Eraser state
   const isErasingRef = useRef(false);
@@ -155,6 +230,11 @@ export const Canvas = () => {
           erasedIdsRef.current.clear();
         }
       }
+      if (isMarqueeSelectingRef.current) {
+        isMarqueeSelectingRef.current = false;
+        setMarqueeBox(null);
+        marqueeInitialSelectionRef.current = [];
+      }
     };
     window.addEventListener('mouseup', handleGlobalMouseUp);
     window.addEventListener('touchend', handleGlobalMouseUp);
@@ -175,18 +255,32 @@ export const Canvas = () => {
       setEditingTextId(null);
     }
 
-    const clickedOnEmpty = e.target === e.target.getStage();
-    if (clickedOnEmpty) {
-      setSelectedId(null);
-    }
-
-    if (activeTool === TOOLS.SELECT) {
-      return;
-    }
-
     const stage = e.target.getStage();
     const pos = stage?.getPointerPosition();
     if (!pos) return;
+
+    const clickedOnEmpty = e.target === stage;
+
+    if (activeTool === TOOLS.SELECT) {
+      if (clickedOnEmpty) {
+        isMarqueeSelectingRef.current = true;
+        setMarqueeBox({
+          startX: pos.x,
+          startY: pos.y,
+          currentX: pos.x,
+          currentY: pos.y,
+        });
+        marqueeInitialSelectionRef.current = e.evt?.shiftKey ? [...useCanvasStore.getState().selectedIds] : [];
+        if (!e.evt?.shiftKey) {
+          clearSelection();
+        }
+      }
+      return;
+    }
+
+    if (clickedOnEmpty) {
+      clearSelection();
+    }
 
     if (activeTool === TOOLS.ERASER) {
       isErasingRef.current = true;
@@ -288,8 +382,39 @@ export const Canvas = () => {
       return;
     }
 
+    if (activeTool === TOOLS.SELECT) {
+      if (isMarqueeSelectingRef.current && marqueeBox) {
+        const stage = e.target.getStage();
+        const pos = stage?.getPointerPosition();
+        if (!pos) return;
+
+        const updatedBox = {
+          ...marqueeBox,
+          currentX: pos.x,
+          currentY: pos.y,
+        };
+        setMarqueeBox(updatedBox);
+
+        const minX = Math.min(updatedBox.startX, updatedBox.currentX);
+        const maxX = Math.max(updatedBox.startX, updatedBox.currentX);
+        const minY = Math.min(updatedBox.startY, updatedBox.currentY);
+        const maxY = Math.max(updatedBox.startY, updatedBox.currentY);
+
+        if (maxX - minX > 2 || maxY - minY > 2) {
+          const currentShapes = useCanvasStore.getState().shapes;
+          const boxRect: BoundingBox = { minX, minY, maxX, maxY };
+          const intersecting = currentShapes
+            .filter((s) => shapeIntersectsBox(s, boxRect))
+            .map((s) => s.id);
+
+          const combined = Array.from(new Set([...marqueeInitialSelectionRef.current, ...intersecting]));
+          setSelectedIds(combined);
+        }
+      }
+      return;
+    }
+
     if (!isDrawing || !currentShapeId.current) return;
-    if (activeTool === TOOLS.SELECT) return;
 
     const stage = e.target.getStage();
     const pos = stage?.getPointerPosition();
@@ -331,6 +456,22 @@ export const Canvas = () => {
           erasedIdsRef.current.clear();
         }
       }
+      return;
+    }
+
+    if (isMarqueeSelectingRef.current) {
+      isMarqueeSelectingRef.current = false;
+      if (marqueeBox) {
+        const w = Math.abs(marqueeBox.currentX - marqueeBox.startX);
+        const h = Math.abs(marqueeBox.currentY - marqueeBox.startY);
+        if (w < 4 && h < 4) {
+          if (marqueeInitialSelectionRef.current.length === 0) {
+            clearSelection();
+          }
+        }
+      }
+      setMarqueeBox(null);
+      marqueeInitialSelectionRef.current = [];
       return;
     }
 
@@ -386,6 +527,7 @@ export const Canvas = () => {
   };
 
   const editingShape = shapes.find(s => s.id === editingTextId);
+  const isSingleLineOrArrow = selectedIds.length === 1 && ['line', 'arrow'].includes(shapes.find(s => s.id === selectedIds[0])?.type || '');
 
   return (
     <div 
@@ -408,25 +550,51 @@ export const Canvas = () => {
             <ShapeRenderer
               key={shape.id}
               shape={shape}
-              isSelected={shape.id === selectedId}
-              onSelect={() => {
+              isSelected={selectedIds.includes(shape.id)}
+              onSelect={(e: any) => {
                 if (activeTool === TOOLS.SELECT) {
-                  setSelectedId(shape.id);
+                  if (e?.evt?.shiftKey) {
+                    toggleSelectId(shape.id);
+                  } else {
+                    setSelectedId(shape.id);
+                  }
                 } else if (activeTool === TOOLS.ERASER) {
                   deleteShape(shape.id, true);
                 }
               }}
               onChange={(newAttrs) => updateShape(shape.id, newAttrs, true)}
+              onDragStart={handleShapeDragStart}
+              onDragMove={handleShapeDragMove}
+              onDragEnd={handleShapeDragEnd}
             />
           ))}
-          {selectedId && !isDrawing && selectedId !== editingTextId && !['line', 'arrow'].includes(shapes.find(s => s.id === selectedId)?.type || '') && (
-            <SelectionBox selectedId={selectedId} />
+
+          {/* Marquee Selection Rectangle */}
+          {marqueeBox && (
+            <Rect
+              x={Math.min(marqueeBox.startX, marqueeBox.currentX)}
+              y={Math.min(marqueeBox.startY, marqueeBox.currentY)}
+              width={Math.abs(marqueeBox.currentX - marqueeBox.startX)}
+              height={Math.abs(marqueeBox.currentY - marqueeBox.startY)}
+              fill="rgba(59, 130, 246, 0.08)"
+              stroke="#3B82F6"
+              strokeWidth={1}
+              dash={[4, 4]}
+              listening={false}
+            />
           )}
-          {selectedId && !isDrawing && ['line', 'arrow'].includes(shapes.find(s => s.id === selectedId)?.type || '') && (
+
+          {/* Unified Transformer for 1 or more shapes (excluding single line/arrow) */}
+          {selectedIds.length > 0 && !isDrawing && selectedId !== editingTextId && !isSingleLineOrArrow && (
+            <SelectionBox selectedIds={selectedIds} />
+          )}
+
+          {/* Single Line/Arrow handle selection */}
+          {isSingleLineOrArrow && !isDrawing && (
             <LineSelectionBox 
-              shape={shapes.find(s => s.id === selectedId)!} 
+              shape={shapes.find(s => s.id === selectedIds[0])!} 
               theme={theme}
-              onChange={(newAttrs, saveHistory) => updateShape(selectedId, newAttrs, saveHistory)} 
+              onChange={(newAttrs, saveHistory) => updateShape(selectedIds[0], newAttrs, saveHistory)} 
             />
           )}
         </Layer>

@@ -17,16 +17,28 @@ export const useKeyboardShortcuts = () => {
         return;
       }
 
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+        const shapes = useCanvasStore.getState().shapes;
+        if (shapes.length > 0) {
+          e.preventDefault();
+          useCanvasStore.getState().setActiveTool(TOOLS.SELECT);
+          useCanvasStore.getState().selectAll();
+        }
+        return;
+      }
+
       if (e.key === 'Backspace' || e.key === 'Delete') {
-        if (selectedId) {
-          deleteShape(selectedId);
+        const { selectedIds, deleteShapes } = useCanvasStore.getState();
+        if (selectedIds.length > 0) {
+          deleteShapes(selectedIds);
         }
       }
 
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
-        if (selectedId) {
+        const { selectedIds, duplicateShapes } = useCanvasStore.getState();
+        if (selectedIds.length > 0) {
           e.preventDefault();
-          duplicateShape(selectedId);
+          duplicateShapes(selectedIds);
         }
       }
 
@@ -41,7 +53,7 @@ export const useKeyboardShortcuts = () => {
       }
 
       if (e.key === 'Escape') {
-        setSelectedId(null);
+        useCanvasStore.getState().clearSelection();
         setActiveTool(TOOLS.SELECT);
       }
 

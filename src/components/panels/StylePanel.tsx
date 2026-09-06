@@ -16,7 +16,8 @@ import {
   ArrowRight, 
   PenTool, 
   Type as TypeIcon,
-  Check
+  Check,
+  Boxes
 } from 'lucide-react';
 import { useCanvasStore } from '../../store/canvasStore';
 import { COLORS, TOOLS } from '../../lib/constants';
@@ -24,18 +25,23 @@ import { COLORS, TOOLS } from '../../lib/constants';
 export const StylePanel = () => {
   const shapes = useCanvasStore((state) => state.shapes);
   const selectedId = useCanvasStore((state) => state.selectedId);
+  const selectedIds = useCanvasStore((state) => state.selectedIds);
   const activeTool = useCanvasStore((state) => state.activeTool);
   const activeStyle = useCanvasStore((state) => state.activeStyle);
   const setActiveStyle = useCanvasStore((state) => state.setActiveStyle);
   const setActiveTool = useCanvasStore((state) => state.setActiveTool);
   const updateShape = useCanvasStore((state) => state.updateShape);
+  const updateShapes = useCanvasStore((state) => state.updateShapes);
   const deleteShape = useCanvasStore((state) => state.deleteShape);
+  const deleteShapes = useCanvasStore((state) => state.deleteShapes);
   const duplicateShape = useCanvasStore((state) => state.duplicateShape);
+  const duplicateShapes = useCanvasStore((state) => state.duplicateShapes);
   const bringToFront = useCanvasStore((state) => state.bringToFront);
   const sendToBack = useCanvasStore((state) => state.sendToBack);
   const bringForward = useCanvasStore((state) => state.bringForward);
   const sendBackward = useCanvasStore((state) => state.sendBackward);
   const setSelectedId = useCanvasStore((state) => state.setSelectedId);
+  const clearSelection = useCanvasStore((state) => state.clearSelection);
 
   const selectedShape = shapes.find((s) => s.id === selectedId);
   const targetType = selectedShape ? selectedShape.type : activeTool;
@@ -60,13 +66,13 @@ export const StylePanel = () => {
   }, [selectedShape?.id, currentStroke, currentFill]);
 
   // If no shape is selected and the user is in select or eraser mode, hide the panel
-  if (!selectedShape && (activeTool === TOOLS.SELECT || activeTool === TOOLS.ERASER)) {
+  if (selectedIds.length === 0 && (activeTool === TOOLS.SELECT || activeTool === TOOLS.ERASER)) {
     return null;
   }
 
   const handleColorChange = (key: 'stroke' | 'fill', color: string) => {
-    if (selectedShape) {
-      updateShape(selectedShape.id, { [key]: color });
+    if (selectedIds.length > 0) {
+      updateShapes(selectedIds.map((id) => ({ id, [key]: color })));
     }
     setActiveStyle({ [key]: color });
     if (key === 'stroke') setStrokeHexInput(color);
@@ -78,39 +84,39 @@ export const StylePanel = () => {
     if (!formatted.startsWith('#') && formatted !== 'transparent') {
       formatted = `#${formatted}`;
     }
-    if (selectedShape) {
-      updateShape(selectedShape.id, { [key]: formatted });
+    if (selectedIds.length > 0) {
+      updateShapes(selectedIds.map((id) => ({ id, [key]: formatted })));
     }
     setActiveStyle({ [key]: formatted });
   };
 
   const handleWidthChange = (strokeWidth: number) => {
     const width = Math.max(1, Math.min(40, strokeWidth));
-    if (selectedShape) {
-      updateShape(selectedShape.id, { strokeWidth: width });
+    if (selectedIds.length > 0) {
+      updateShapes(selectedIds.map((id) => ({ id, strokeWidth: width })));
     }
     setActiveStyle({ strokeWidth: width });
   };
 
   const handleStrokeStyleChange = (strokeStyle: 'solid' | 'dashed' | 'dotted') => {
-    if (selectedShape) {
-      updateShape(selectedShape.id, { strokeStyle });
+    if (selectedIds.length > 0) {
+      updateShapes(selectedIds.map((id) => ({ id, strokeStyle })));
     }
     setActiveStyle({ strokeStyle });
   };
 
   const handleOpacityChange = (opacity: number) => {
     const clamped = Math.max(0, Math.min(1, opacity));
-    if (selectedShape) {
-      updateShape(selectedShape.id, { opacity: clamped });
+    if (selectedIds.length > 0) {
+      updateShapes(selectedIds.map((id) => ({ id, opacity: clamped })));
     }
     setActiveStyle({ opacity: clamped });
   };
 
   const handleCornerRadiusChange = (cornerRadius: number) => {
     const clamped = Math.max(0, Math.min(60, cornerRadius));
-    if (selectedShape) {
-      updateShape(selectedShape.id, { cornerRadius: clamped });
+    if (selectedIds.length > 0) {
+      updateShapes(selectedIds.map((id) => ({ id, cornerRadius: clamped })));
     }
     setActiveStyle({ cornerRadius: clamped });
   };
@@ -227,33 +233,44 @@ export const StylePanel = () => {
       {/* Header with Shape Badge and Quick Actions */}
       <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-zinc-800">
         <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 dark:bg-zinc-800 rounded-lg border border-gray-200/60 dark:border-zinc-700/60">
-          {getShapeIcon(targetType)}
-          <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider jetbrains-mono">
-            {targetType}
-          </span>
+          {selectedIds.length > 1 ? (
+            <>
+              <Boxes size={14} className="text-[#FF5A36]" />
+              <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider jetbrains-mono">
+                {selectedIds.length} Items
+              </span>
+            </>
+          ) : (
+            <>
+              {getShapeIcon(targetType)}
+              <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider jetbrains-mono">
+                {targetType}
+              </span>
+            </>
+          )}
         </div>
 
-        {selectedShape ? (
+        {selectedIds.length > 0 ? (
           <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={() => duplicateShape(selectedShape.id)}
-              title="Duplicate Shape (Ctrl+D)"
+              onClick={() => duplicateShapes(selectedIds)}
+              title="Duplicate (Ctrl+D)"
               className="p-1.5 rounded-lg text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
             >
               <Copy size={15} />
             </button>
             <button
               type="button"
-              onClick={() => deleteShape(selectedShape.id)}
-              title="Delete Shape"
+              onClick={() => deleteShapes(selectedIds)}
+              title="Delete (Delete)"
               className="p-1.5 rounded-lg text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
             >
               <Trash2 size={15} />
             </button>
             <button
               type="button"
-              onClick={() => setSelectedId(null)}
+              onClick={() => clearSelection()}
               title="Deselect (Esc)"
               className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
             >

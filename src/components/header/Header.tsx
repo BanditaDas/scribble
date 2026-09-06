@@ -1,9 +1,13 @@
 import React from 'react';
-import { Undo2, Redo2, Trash2, Download, Moon, Sun } from 'lucide-react';
+import { Undo2, Redo2, Trash2, Download, Moon, Sun, CheckSquare } from 'lucide-react';
 import { useCanvasStore } from '../../store/canvasStore';
+import { TOOLS } from '../../lib/constants';
 import { IconButton } from '../ui/IconButton';
 
 export const Header = () => {
+  const shapes = useCanvasStore((state) => state.shapes);
+  const selectAll = useCanvasStore((state) => state.selectAll);
+  const setActiveTool = useCanvasStore((state) => state.setActiveTool);
   const undo = useCanvasStore((state) => state.undo);
   const redo = useCanvasStore((state) => state.redo);
   const clearCanvas = useCanvasStore((state) => state.clearCanvas);
@@ -58,6 +62,17 @@ export const Header = () => {
         </div>
 
         <div className="flex items-center bg-white dark:bg-zinc-800 rounded-lg p-1 shadow-sm border border-gray-200 dark:border-zinc-700 transition-colors">
+          <IconButton
+            icon={<CheckSquare size={18} />}
+            label="Select All (Ctrl+A)"
+            onClick={() => {
+              setActiveTool(TOOLS.SELECT);
+              selectAll();
+            }}
+            disabled={shapes.length === 0}
+            className={shapes.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}
+          />
+          <div className="w-px h-4 bg-gray-200 dark:bg-zinc-700 mx-1 transition-colors" />
           <IconButton
             icon={<Trash2 size={18} />}
             label="Clear Canvas"

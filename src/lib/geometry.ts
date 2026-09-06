@@ -196,3 +196,133 @@ export const shapeIntersectsEraser = (
 
   return false;
 };
+
+export interface BoundingBox {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
+
+export const getShapeBounds = (shape: {
+  type: string;
+  x: number;
+  y: number;
+  width?: number;
+  height?: number;
+  points?: number[];
+  fontSize?: number;
+  text?: string;
+}): BoundingBox => {
+  if (shape.type === 'rectangle' || shape.type === 'ellipse') {
+    const w = shape.width || 0;
+    const h = shape.height || 0;
+    const rx = w < 0 ? shape.x + w : shape.x;
+    const ry = h < 0 ? shape.y + h : shape.y;
+    return {
+      minX: rx,
+      minY: ry,
+      maxX: rx + Math.abs(w),
+      maxY: ry + Math.abs(h),
+    };
+  }
+
+  if (shape.type === 'line' || shape.type === 'arrow' || shape.type === 'pen') {
+    const pts = shape.points || [];
+    if (pts.length < 2) {
+      return { minX: shape.x, minY: shape.y, maxX: shape.x, maxY: shape.y };
+    }
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (let i = 0; i < pts.length; i += 2) {
+      const px = shape.x + pts[i];
+      const py = shape.y + pts[i + 1];
+      if (px < minX) minX = px;
+      if (px > maxX) maxX = px;
+      if (py < minY) minY = py;
+      if (py > maxY) maxY = py;
+    }
+    return { minX, minY, maxX, maxY };
+  }
+
+  if (shape.type === 'text') {
+    const fontSize = shape.fontSize || 20;
+    const textLength = Math.max(1, (shape.text || ' ').length);
+    const textW = Math.max(40, textLength * fontSize * 0.65);
+    const textH = Math.max(fontSize * 1.3, 24);
+    return {
+      minX: shape.x,
+      minY: shape.y,
+      maxX: shape.x + textW,
+      maxY: shape.y + textH,
+    };
+  }
+
+  return { minX: shape.x, minY: shape.y, maxX: shape.x, maxY: shape.y };
+};
+
+export const boxesIntersect = (a: BoundingBox, b: BoundingBox): boolean => {
+  return !(a.maxX < b.minX || a.minX > b.maxX || a.maxY < b.minY || a.minY > b.maxY);
+};
+
+export const shapeIntersectsBox = (
+  shape: {
+    type: string;
+    x: number;
+    y: number;
+    width?: number;
+    height?: number;
+    points?: number[];
+    fontSize?: number;
+    text?: string;
+  },
+  box: BoundingBox
+): boolean => {
+  const shapeBounds = getShapeBounds(shape);
+  // Quick rejection if AABBs do not overlap
+  if (!boxesIntersect(shapeBounds, box)) {
+    return false;
+  }
+
+  // If bounding boxes overlap, for rectangle/ellipse/text, the bounds overlap is sufficient
+  if (shape.type === 'rectangle' || shape.type === 'ellipse' || shape.type === 'text') {
+    return true;
+  }
+
+  // For line / arrow / pen strokes:
+  // Check if any point is inside the box
+  const pts = shape.points || [];
+  for (let i = 0; i < pts.length; i += 2) {
+    const px = shape.x + pts[i];
+    const py = shape.y + pts[i + 1];
+    if (px >= box.minX && px <= box.maxX && py >= box.minY && py <= box.maxY) {
+      return true;
+    }
+  }
+
+  // Check if any line segment intersects any of the 4 borders of the box
+  const boxBorders = [
+    [box.minX, box.minY, box.maxX, box.minY],
+    [box.maxX, box.minY, box.maxX, box.maxY],
+    [box.maxX, box.maxY, box.minX, box.maxY],
+    [box.minX, box.maxY, box.minX, box.minY],
+  ];
+
+  for (let i = 0; i < pts.length - 2; i += 2) {
+    const p1x = shape.x + pts[i];
+    const p1y = shape.y + pts[i + 1];
+    const p2x = shape.x + pts[i + 2];
+    const p2y = shape.y + pts[i + 3];
+
+    for (const [bx1, by1, bx2, by2] of boxBorders) {
+      if (segmentsIntersect(p1x, p1y, p2x, p2y, bx1, by1, bx2, by2)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+};
+

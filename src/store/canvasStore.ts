@@ -37,6 +37,7 @@ interface CanvasState {
   history: Shape[][];
   historyStep: number;
   selectedId: string | null;
+  selectedIds: string[];
   editingTextId: string | null;
   activeTool: string;
   activeStyle: ActiveStyle;
@@ -47,9 +48,11 @@ interface CanvasState {
   setEditingTextId: (id: string | null) => void;
   addShape: (shape: Shape, saveHistory?: boolean) => void;
   updateShape: (id: string, newProps: Partial<Shape>, saveHistory?: boolean) => void;
+  updateShapes: (updates: Array<{ id: string } & Partial<Shape>>, saveHistory?: boolean) => void;
   deleteShape: (id: string, saveHistory?: boolean) => void;
   deleteShapes: (ids: string[], saveHistory?: boolean) => void;
   duplicateShape: (id: string) => void;
+  duplicateShapes: (ids: string[]) => void;
   bringToFront: (id: string) => void;
   sendToBack: (id: string) => void;
   bringForward: (id: string) => void;
@@ -57,6 +60,10 @@ interface CanvasState {
   commitHistory: () => void;
   setShapes: (shapes: Shape[]) => void;
   setSelectedId: (id: string | null) => void;
+  setSelectedIds: (ids: string[]) => void;
+  toggleSelectId: (id: string) => void;
+  selectAll: () => void;
+  clearSelection: () => void;
   setActiveTool: (tool: string) => void;
   undo: () => void;
   redo: () => void;
@@ -69,6 +76,7 @@ export const useCanvasStore = create<CanvasState>((set) => ({
   history: [[]],
   historyStep: 0,
   selectedId: null,
+  selectedIds: [],
   editingTextId: null,
   activeTool: TOOLS.SELECT,
   activeStyle: {
@@ -124,6 +132,7 @@ export const useCanvasStore = create<CanvasState>((set) => ({
       return {
         shapes: newShapes,
         selectedId: shape.id,
+        selectedIds: [shape.id],
       };
     }
     const newHistory = state.history.slice(0, state.historyStep + 1);
@@ -132,6 +141,7 @@ export const useCanvasStore = create<CanvasState>((set) => ({
       history: [...newHistory, newShapes],
       historyStep: newHistory.length,
       selectedId: shape.id,
+      selectedIds: [shape.id],
     };
   }),
 
@@ -179,13 +189,34 @@ export const useCanvasStore = create<CanvasState>((set) => ({
     };
   }),
 
+  updateShapes: (updates, saveHistory = true) => set((state) => {
+    if (updates.length === 0) return state;
+    const updateMap = new Map(updates.map((u) => [u.id, u]));
+    const newShapes = state.shapes.map((shape) => {
+      const u = updateMap.get(shape.id);
+      return u ? { ...shape, ...u } : shape;
+    });
+
+    if (!saveHistory) {
+      return { shapes: newShapes };
+    }
+    const newHistory = state.history.slice(0, state.historyStep + 1);
+    return {
+      shapes: newShapes,
+      history: [...newHistory, newShapes],
+      historyStep: newHistory.length,
+    };
+  }),
+
   deleteShape: (id, saveHistory = true) => set((state) => {
     const newShapes = state.shapes.filter((shape) => shape.id !== id);
-    const newSelectedId = state.selectedId === id ? null : state.selectedId;
+    const newSelectedIds = state.selectedIds.filter((item) => item !== id);
+    const newSelectedId = newSelectedIds[0] || null;
     if (!saveHistory) {
       return {
         shapes: newShapes,
         selectedId: newSelectedId,
+        selectedIds: newSelectedIds,
       };
     }
     const newHistory = state.history.slice(0, state.historyStep + 1);
@@ -194,6 +225,7 @@ export const useCanvasStore = create<CanvasState>((set) => ({
       history: [...newHistory, newShapes],
       historyStep: newHistory.length,
       selectedId: newSelectedId,
+      selectedIds: newSelectedIds,
     };
   }),
 
@@ -201,11 +233,13 @@ export const useCanvasStore = create<CanvasState>((set) => ({
     if (ids.length === 0) return state;
     const idSet = new Set(ids);
     const newShapes = state.shapes.filter((shape) => !idSet.has(shape.id));
-    const newSelectedId = state.selectedId && idSet.has(state.selectedId) ? null : state.selectedId;
+    const newSelectedIds = state.selectedIds.filter((id) => !idSet.has(id));
+    const newSelectedId = newSelectedIds[0] || null;
     if (!saveHistory) {
       return {
         shapes: newShapes,
         selectedId: newSelectedId,
+        selectedIds: newSelectedIds,
       };
     }
     const newHistory = state.history.slice(0, state.historyStep + 1);
@@ -214,6 +248,7 @@ export const useCanvasStore = create<CanvasState>((set) => ({
       history: [...newHistory, newShapes],
       historyStep: newHistory.length,
       selectedId: newSelectedId,
+      selectedIds: newSelectedIds,
     };
   }),
 
@@ -234,6 +269,33 @@ export const useCanvasStore = create<CanvasState>((set) => ({
       history: [...newHistory, newShapes],
       historyStep: newHistory.length,
       selectedId: duplicated.id,
+      selectedIds: [duplicated.id],
+    };
+  }),
+
+  duplicateShapes: (ids) => set((state) => {
+    if (ids.length === 0) return state;
+    const targetShapes = state.shapes.filter((s) => ids.includes(s.id));
+    if (targetShapes.length === 0) return state;
+
+    const duplicatedList: Shape[] = targetShapes.map((shape) => ({
+      ...shape,
+      id: crypto.randomUUID(),
+      x: shape.x + 20,
+      y: shape.y + 20,
+      points: shape.points ? [...shape.points] : undefined,
+    }));
+
+    const newShapes = [...state.shapes, ...duplicatedList];
+    const newHistory = state.history.slice(0, state.historyStep + 1);
+    const newSelectedIds = duplicatedList.map((d) => d.id);
+
+    return {
+      shapes: newShapes,
+      history: [...newHistory, newShapes],
+      historyStep: newHistory.length,
+      selectedIds: newSelectedIds,
+      selectedId: newSelectedIds[0] || null,
     };
   }),
 
@@ -316,9 +378,9 @@ export const useCanvasStore = create<CanvasState>((set) => ({
   }),
 
   setSelectedId: (id) => set((state) => {
-    if (!id) return { selectedId: null };
+    if (!id) return { selectedId: null, selectedIds: [] };
     const shape = state.shapes.find((s) => s.id === id);
-    if (!shape) return { selectedId: id };
+    if (!shape) return { selectedId: id, selectedIds: [id] };
 
     const updatedActiveStyle: ActiveStyle = { ...state.activeStyle };
     if (shape.stroke) updatedActiveStyle.stroke = shape.stroke;
@@ -340,13 +402,73 @@ export const useCanvasStore = create<CanvasState>((set) => ({
 
     return {
       selectedId: id,
+      selectedIds: [id],
       activeStyle: updatedActiveStyle,
     };
+  }),
+
+  setSelectedIds: (ids) => set((state) => {
+    const validIds = ids.filter((id) => state.shapes.some((s) => s.id === id));
+    if (validIds.length === 0) {
+      return { selectedId: null, selectedIds: [] };
+    }
+    const firstShape = state.shapes.find((s) => s.id === validIds[0]);
+    let nextActiveStyle = state.activeStyle;
+    if (firstShape) {
+      const updated: ActiveStyle = { ...state.activeStyle };
+      if (firstShape.stroke) updated.stroke = firstShape.stroke;
+      if (firstShape.fill && (firstShape.type === 'rectangle' || firstShape.type === 'ellipse')) {
+        updated.fill = firstShape.fill;
+      }
+      if (firstShape.strokeWidth !== undefined) updated.strokeWidth = firstShape.strokeWidth;
+      if (firstShape.strokeStyle) updated.strokeStyle = firstShape.strokeStyle;
+      if (firstShape.opacity !== undefined) updated.opacity = firstShape.opacity;
+      if (firstShape.cornerRadius !== undefined && firstShape.type === 'rectangle') {
+        updated.cornerRadius = firstShape.cornerRadius;
+      }
+      if (firstShape.fontSize !== undefined && firstShape.type === 'text') {
+        updated.fontSize = firstShape.fontSize;
+      }
+      if (firstShape.fontFamily && firstShape.type === 'text') {
+        updated.fontFamily = firstShape.fontFamily;
+      }
+      nextActiveStyle = updated;
+    }
+    return {
+      selectedIds: validIds,
+      selectedId: validIds[0] || null,
+      activeStyle: nextActiveStyle,
+    };
+  }),
+
+  toggleSelectId: (id) => set((state) => {
+    const isSelected = state.selectedIds.includes(id);
+    const newSelectedIds = isSelected
+      ? state.selectedIds.filter((item) => item !== id)
+      : [...state.selectedIds, id];
+    return {
+      selectedIds: newSelectedIds,
+      selectedId: newSelectedIds[0] || null,
+    };
+  }),
+
+  selectAll: () => set((state) => {
+    const allIds = state.shapes.map((s) => s.id);
+    return {
+      selectedIds: allIds,
+      selectedId: allIds[0] || null,
+    };
+  }),
+
+  clearSelection: () => set({
+    selectedIds: [],
+    selectedId: null,
   }),
 
   setActiveTool: (tool) => set((state) => ({
     activeTool: tool,
     selectedId: tool !== TOOLS.SELECT ? null : state.selectedId,
+    selectedIds: tool !== TOOLS.SELECT ? [] : state.selectedIds,
   })),
   
   undo: () => set((state) => {
@@ -355,6 +477,7 @@ export const useCanvasStore = create<CanvasState>((set) => ({
       historyStep: state.historyStep - 1,
       shapes: state.history[state.historyStep - 1],
       selectedId: null,
+      selectedIds: [],
     };
   }),
 
@@ -364,6 +487,7 @@ export const useCanvasStore = create<CanvasState>((set) => ({
       historyStep: state.historyStep + 1,
       shapes: state.history[state.historyStep + 1],
       selectedId: null,
+      selectedIds: [],
     };
   }),
 
@@ -374,6 +498,7 @@ export const useCanvasStore = create<CanvasState>((set) => ({
       history: [...newHistory, []],
       historyStep: newHistory.length,
       selectedId: null,
+      selectedIds: [],
     };
   }),
 }));
