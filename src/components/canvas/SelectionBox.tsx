@@ -24,7 +24,7 @@ export const SelectionBox = ({ selectedIds, selectedId }: SelectionBoxProps) => 
       trRef.current.nodes(selectedNodes);
       trRef.current.getLayer()?.batchDraw();
     }
-  }, [ids.join(','), shapes]);
+  }, [ids.join(',')]);
 
   const handleTransformEnd = () => {
     if (!trRef.current) return;

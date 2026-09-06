@@ -125,64 +125,39 @@ export const Canvas = () => {
   const isMarqueeSelectingRef = useRef(false);
   const marqueeInitialSelectionRef = useRef<string[]>([]);
 
-  // Synchronized multi-shape drag state
-  const dragStartPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
-  const dragOriginRef = useRef<{ x: number; y: number } | null>(null);
-
-  const handleShapeDragStart = (e: any, shape: Shape) => {
-    const currentSelectedIds = useCanvasStore.getState().selectedIds;
-    const currentShapes = useCanvasStore.getState().shapes;
-    if (currentSelectedIds.includes(shape.id) && currentSelectedIds.length > 1) {
-      const posMap = new Map<string, { x: number; y: number }>();
-      for (const id of currentSelectedIds) {
-        const s = currentShapes.find((item) => item.id === id);
-        if (s) {
-          posMap.set(id, { x: s.x, y: s.y });
-        }
-      }
-      dragStartPositionsRef.current = posMap;
-      dragOriginRef.current = { x: e.target.x(), y: e.target.y() };
-    } else {
-      dragStartPositionsRef.current.clear();
-      dragOriginRef.current = null;
-    }
-  };
-
-  const handleShapeDragMove = (e: any, shape: Shape) => {
-    if (dragOriginRef.current && dragStartPositionsRef.current.size > 1) {
-      const dx = e.target.x() - dragOriginRef.current.x;
-      const dy = e.target.y() - dragOriginRef.current.y;
-      const stage = stageRef.current;
-      if (stage) {
-        for (const [id, startPos] of dragStartPositionsRef.current.entries()) {
-          if (id !== shape.id) {
-            const node = stage.findOne(`#${id}`);
-            if (node) {
-              node.x(startPos.x + dx);
-              node.y(startPos.y + dy);
-            }
-          }
-        }
-        stage.batchDraw();
-      }
-    }
-  };
+  // Batch/debounce multi-shape drag-end handler
+  const dragEndFrameRef = useRef<number | null>(null);
 
   const handleShapeDragEnd = (e: any, shape: Shape) => {
-    if (dragOriginRef.current && dragStartPositionsRef.current.size > 1) {
-      const dx = e.target.x() - dragOriginRef.current.x;
-      const dy = e.target.y() - dragOriginRef.current.y;
-      const updates = Array.from(dragStartPositionsRef.current.entries()).map(([id, startPos]) => ({
-        id,
-        x: startPos.x + dx,
-        y: startPos.y + dy,
-      }));
-      updateShapes(updates, true);
-      dragStartPositionsRef.current.clear();
-      dragOriginRef.current = null;
-    } else {
+    const currentSelectedIds = useCanvasStore.getState().selectedIds;
+    if (currentSelectedIds.length <= 1) {
       updateShape(shape.id, { x: e.target.x(), y: e.target.y() }, true);
+      return;
     }
+
+    // When multiple shapes are selected, Konva's Transformer._proxyDrag
+    // handles multi-node drag at native 60+ FPS in canvas. On mouse release,
+    // we debounce dragend with requestAnimationFrame so that all updated positions
+    // are committed in a single atomic history transaction.
+    if (dragEndFrameRef.current !== null) {
+      cancelAnimationFrame(dragEndFrameRef.current);
+    }
+    dragEndFrameRef.current = requestAnimationFrame(() => {
+      dragEndFrameRef.current = null;
+      const stage = stageRef.current;
+      if (!stage) return;
+      const currentSelected = useCanvasStore.getState().selectedIds;
+      const updates: Array<{ id: string; x: number; y: number }> = [];
+      for (const id of currentSelected) {
+        const node = stage.findOne(`#${id}`);
+        if (node) {
+          updates.push({ id, x: node.x(), y: node.y() });
+        }
+      }
+      if (updates.length > 0) {
+        useCanvasStore.getState().updateShapes(updates, true);
+      }
+    });
   };
 
   // Eraser state
@@ -563,8 +538,6 @@ export const Canvas = () => {
                 }
               }}
               onChange={(newAttrs) => updateShape(shape.id, newAttrs, true)}
-              onDragStart={handleShapeDragStart}
-              onDragMove={handleShapeDragMove}
               onDragEnd={handleShapeDragEnd}
             />
           ))}

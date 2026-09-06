@@ -8,8 +8,6 @@ interface ShapeRendererProps {
   isSelected: boolean;
   onSelect: (e: any) => void;
   onChange: (newAttrs: any) => void;
-  onDragStart?: (e: any, shape: Shape) => void;
-  onDragMove?: (e: any, shape: Shape) => void;
   onDragEnd?: (e: any, shape: Shape) => void;
 }
 
@@ -18,8 +16,6 @@ export const ShapeRenderer = ({
   isSelected, 
   onSelect, 
   onChange,
-  onDragStart,
-  onDragMove,
   onDragEnd,
 }: ShapeRendererProps) => {
   const shapeRef = useRef<any>(null);
@@ -60,6 +56,8 @@ export const ShapeRenderer = ({
     lineCap,
     lineJoin,
     draggable: isSelected && activeTool === TOOLS.SELECT,
+    perfectDrawEnabled: false,
+    shadowForStrokeEnabled: false,
     onClick: (e: any) => onSelect(e),
     onTap: (e: any) => onSelect(e),
     onMouseDown: (e: any) => {
@@ -80,16 +78,6 @@ export const ShapeRenderer = ({
         } else if (!selectedIds.includes(shape.id)) {
           setSelectedId(shape.id);
         }
-      }
-    },
-    onDragStart: (e: any) => {
-      if (onDragStart) {
-        onDragStart(e, shape);
-      }
-    },
-    onDragMove: (e: any) => {
-      if (onDragMove) {
-        onDragMove(e, shape);
       }
     },
     onMouseEnter: (e: any) => {
@@ -220,6 +208,8 @@ export const ShapeRenderer = ({
           points={shape.points || []}
           tension={shape.type === 'pen' ? 0.5 : 0}
           hitStrokeWidth={Math.max(strokeWidth * 2, 20)}
+          perfectDrawEnabled={false}
+          shadowForStrokeEnabled={false}
         />
       );
     case 'arrow':
@@ -232,6 +222,8 @@ export const ShapeRenderer = ({
           pointerLength={arrowPointerSize}
           pointerWidth={arrowPointerSize}
           hitStrokeWidth={Math.max(strokeWidth * 2, 20)}
+          perfectDrawEnabled={false}
+          shadowForStrokeEnabled={false}
         />
       );  
     case 'text':
