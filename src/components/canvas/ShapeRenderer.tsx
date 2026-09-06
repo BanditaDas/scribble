@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { Rect, Ellipse, Line, Arrow, Text } from 'react-konva';
 import { Shape, useCanvasStore } from '../../store/canvasStore';
-import { TOOLS } from '../../lib/constants';
+import { TOOLS, DEFAULT_PROPS } from '../../lib/constants';
 
 interface ShapeRendererProps {
   shape: Shape;
@@ -15,6 +15,27 @@ export const ShapeRenderer = ({ shape, isSelected, onSelect, onChange }: ShapeRe
   const isEditing = useCanvasStore((state) => state.editingTextId === shape.id);
   const activeTool = useCanvasStore((state) => state.activeTool);
 
+  const strokeWidth = shape.strokeWidth !== undefined ? shape.strokeWidth : DEFAULT_PROPS.strokeWidth;
+  const strokeStyle = shape.strokeStyle || DEFAULT_PROPS.strokeStyle;
+
+  // Scale dash patterns and caps dynamically based on stroke width:
+  // - Dashed: Flat (butt) rectangular dashes (~2.2x stroke width) with clean gaps (~1.4x stroke width)
+  // - Dotted: True circular dots via [0, gap] with lineCap="round" (spacing = 2x stroke width, so space between dots equals dot diameter)
+  // - Solid: Continuous stroke with smooth rounded ends on open paths
+  const isDotted = strokeStyle === 'dotted';
+  const isDashed = strokeStyle === 'dashed';
+
+  const dash = isDashed
+    ? [Math.max(8, Math.round(strokeWidth * 2.2)), Math.max(6, Math.round(strokeWidth * 1.4))]
+    : isDotted
+    ? [0, Math.max(6, Math.round(strokeWidth * 2))]
+    : undefined;
+
+  const lineCap: 'round' | 'butt' = isDashed ? 'butt' : 'round';
+  const lineJoin: 'round' | 'miter' = shape.type === 'rectangle' && (!shape.cornerRadius || shape.cornerRadius === 0)
+    ? 'miter'
+    : 'round';
+
   const commonProps = {
     id: shape.id,
     x: shape.x,
@@ -22,9 +43,11 @@ export const ShapeRenderer = ({ shape, isSelected, onSelect, onChange }: ShapeRe
     rotation: shape.rotation || 0,
     stroke: shape.stroke,
     fill: shape.fill,
-    strokeWidth: shape.strokeWidth,
+    strokeWidth,
     opacity: shape.opacity ?? 1,
-    dash: shape.strokeStyle === 'dashed' ? [8, 8] : shape.strokeStyle === 'dotted' ? [3, 5] : undefined,
+    dash,
+    lineCap,
+    lineJoin,
     draggable: isSelected && activeTool === TOOLS.SELECT,
     onClick: onSelect,
     onTap: onSelect,
@@ -151,20 +174,19 @@ export const ShapeRenderer = ({ shape, isSelected, onSelect, onChange }: ShapeRe
           ref={shapeRef}
           points={shape.points || []}
           tension={shape.type === 'pen' ? 0.5 : 0}
-          lineCap="round"
-          lineJoin="round"
-          hitStrokeWidth={Math.max((shape.strokeWidth || 2) * 2, 20)}
+          hitStrokeWidth={Math.max(strokeWidth * 2, 20)}
         />
       );
     case 'arrow':
+      const arrowPointerSize = Math.max(10, Math.round(strokeWidth * 2));
       return (
         <Arrow
           {...commonProps}
           ref={shapeRef}
           points={shape.points || []}
-          pointerLength={10}
-          pointerWidth={10}
-          hitStrokeWidth={Math.max((shape.strokeWidth || 2) * 2, 20)}
+          pointerLength={arrowPointerSize}
+          pointerWidth={arrowPointerSize}
+          hitStrokeWidth={Math.max(strokeWidth * 2, 20)}
         />
       );  
     case 'text':
