@@ -95,11 +95,11 @@ export const SelectionBox = ({ selectedIds, selectedId }: SelectionBoxProps) => 
           : ['top-left', 'top-center', 'top-right', 'middle-right', 'middle-left', 'bottom-left', 'bottom-center', 'bottom-right']
       }
       keepRatio={isText}
-      anchorStroke="#FF5A36"
+      anchorStroke="#6366F1"
       anchorFill="#FFFFFF"
       anchorSize={8}
       anchorCornerRadius={2}
-      borderStroke="#FF5A36"
+      borderStroke="#6366F1"
       borderDash={[4, 4]}
       shouldOverdrawWholeArea={true}
     />

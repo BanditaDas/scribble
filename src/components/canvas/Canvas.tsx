@@ -8,7 +8,7 @@ import { ShapeRenderer } from './ShapeRenderer';
 import { SelectionBox } from './SelectionBox';
 import { LineSelectionBox } from './LineSelectionBox';
 
-const ERASER_CURSOR = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M7 21L2.7 16.7c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21' fill='%23FFFFFF' stroke='%2318181B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M22 21H7' stroke='%2318181B' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M5 11l9 9' stroke='%23FF5A36' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") 3 21, crosshair`;
+const ERASER_CURSOR = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M7 21L2.7 16.7c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21' fill='%23FFFFFF' stroke='%2318181B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M22 21H7' stroke='%2318181B' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M5 11l9 9' stroke='%236366F1' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") 3 21, crosshair`;
 
 interface TextEditorOverlayProps {
   shape: Shape;
@@ -73,7 +73,7 @@ const TextEditorOverlay = ({ shape, onUpdate, onFinish, onCancel }: TextEditorOv
       onKeyDown={handleKeyDown}
       onMouseDown={(e) => e.stopPropagation()}
       onTouchStart={(e) => e.stopPropagation()}
-      className="absolute z-20 bg-transparent outline-none resize-none overflow-hidden placeholder-gray-400 dark:placeholder-gray-500 border border-dashed border-[#FF5A36] rounded-xs"
+      className="absolute z-20 bg-transparent outline-none resize-none overflow-hidden placeholder-gray-400 dark:placeholder-gray-500 border border-dashed border-[#6366F1] rounded-xs"
       style={{
         top: Math.max(0, shape.y),
         left: Math.max(0, shape.x),

@@ -14,7 +14,7 @@ export const LineSelectionBox = ({ shape, onChange, theme }: LineSelectionBoxPro
   const startPoint = { x: shape.x + shape.points[0], y: shape.y + shape.points[1] };
   const endPoint = { x: shape.x + shape.points[2], y: shape.y + shape.points[3] };
 
-  const handleColor = theme === 'dark' ? '#3B82F6' : '#2563EB';
+  const handleColor = theme === 'dark' ? '#818CF8' : '#6366F1';
   const handleStroke = theme === 'dark' ? '#FFFFFF' : '#FFFFFF';
 
   const onDragStartHandle = (e: any) => {

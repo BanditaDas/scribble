@@ -169,7 +169,7 @@ export const StylePanel = () => {
     '#F59E0B',
     '#8B5CF6',
     '#EC4899',
-    '#FFE4DE',
+    '#E0E7FF',
     '#DBEAFE',
     '#D1FAE5',
     '#FEF3C7',
@@ -215,12 +215,12 @@ export const StylePanel = () => {
 
   const getShapeIcon = (type: string) => {
     switch (type) {
-      case 'rectangle': return <Square size={14} className="text-[#FF5A36]" />;
-      case 'ellipse': return <CircleIcon size={14} className="text-[#FF5A36]" />;
-      case 'line': return <MinusIcon size={14} className="text-[#FF5A36]" />;
-      case 'arrow': return <ArrowRight size={14} className="text-[#FF5A36]" />;
-      case 'pen': return <PenTool size={14} className="text-[#FF5A36]" />;
-      case 'text': return <TypeIcon size={14} className="text-[#FF5A36]" />;
+      case 'rectangle': return <Square size={14} className="text-[#6366F1]" />;
+      case 'ellipse': return <CircleIcon size={14} className="text-[#6366F1]" />;
+      case 'line': return <MinusIcon size={14} className="text-[#6366F1]" />;
+      case 'arrow': return <ArrowRight size={14} className="text-[#6366F1]" />;
+      case 'pen': return <PenTool size={14} className="text-[#6366F1]" />;
+      case 'text': return <TypeIcon size={14} className="text-[#6366F1]" />;
       default: return null;
     }
   };
@@ -235,7 +235,7 @@ export const StylePanel = () => {
         <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 dark:bg-zinc-800 rounded-lg border border-gray-200/60 dark:border-zinc-700/60">
           {selectedIds.length > 1 ? (
             <>
-              <Boxes size={14} className="text-[#FF5A36]" />
+              <Boxes size={14} className="text-[#6366F1]" />
               <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider jetbrains-mono">
                 {selectedIds.length} Items
               </span>
@@ -350,7 +350,7 @@ export const StylePanel = () => {
                   onChange={handleTextChange}
                   rows={2}
                   placeholder="Type text..."
-                  className="w-full px-2.5 py-1.5 border border-gray-200 dark:border-zinc-700 rounded-xl text-sm focus:outline-none focus:border-[#FF5A36] focus:ring-1 focus:ring-[#FF5A36] dark:bg-zinc-800/80 dark:text-gray-100 transition-all resize-none shadow-xs"
+                  className="w-full px-2.5 py-1.5 border border-gray-200 dark:border-zinc-700 rounded-xl text-sm focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] dark:bg-zinc-800/80 dark:text-gray-100 transition-all resize-none shadow-xs"
                 />
               </div>
             )}
@@ -362,7 +362,7 @@ export const StylePanel = () => {
               <select
                 value={currentFontFamily}
                 onChange={(e) => handleFontFamilyChange(e.target.value)}
-                className="w-full px-2.5 py-1.5 border border-gray-200 dark:border-zinc-700 rounded-xl text-sm focus:outline-none focus:border-[#FF5A36] focus:ring-1 focus:ring-[#FF5A36] dark:bg-zinc-800/80 dark:text-gray-100 transition-all shadow-xs"
+                className="w-full px-2.5 py-1.5 border border-gray-200 dark:border-zinc-700 rounded-xl text-sm focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] dark:bg-zinc-800/80 dark:text-gray-100 transition-all shadow-xs"
               >
                 {fontFamilies.map((font) => (
                   <option key={font.value} value={font.value}>
@@ -377,7 +377,7 @@ export const StylePanel = () => {
                 <label className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider jetbrains-mono">
                   Font Size
                 </label>
-                <span className="text-xs font-bold text-[#FF5A36] jetbrains-mono">
+                <span className="text-xs font-bold text-[#6366F1] jetbrains-mono">
                   {currentFontSize}px
                 </span>
               </div>
@@ -393,7 +393,7 @@ export const StylePanel = () => {
                       onClick={() => handleFontSizeChange(size)}
                       className={`py-1 text-xs font-semibold rounded-lg transition-all flex flex-col items-center justify-center ${
                         isActive
-                          ? 'bg-[#FF5A36] text-white shadow-xs'
+                          ? 'bg-[#6366F1] text-white shadow-xs'
                           : 'text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-zinc-700 hover:text-gray-900 dark:hover:text-white'
                       }`}
                     >
@@ -427,7 +427,7 @@ export const StylePanel = () => {
                         handleFontSizeChange(val);
                       }
                     }}
-                    className="w-full text-center py-1 px-6 border border-gray-200 dark:border-zinc-700 rounded-xl text-sm font-semibold bg-white dark:bg-zinc-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-[#FF5A36] focus:ring-1 focus:ring-[#FF5A36] transition-colors shadow-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    className="w-full text-center py-1 px-6 border border-gray-200 dark:border-zinc-700 rounded-xl text-sm font-semibold bg-white dark:bg-zinc-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors shadow-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 dark:text-gray-500 pointer-events-none">
                     px
@@ -476,7 +476,7 @@ export const StylePanel = () => {
                   onClick={() => handleColorChange('stroke', c)}
                   className={`relative w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-150 group hover:scale-105 ${
                     isSelected 
-                      ? 'ring-2 ring-offset-2 dark:ring-offset-zinc-900 ring-[#FF5A36] border-transparent scale-105' 
+                      ? 'ring-2 ring-offset-2 dark:ring-offset-zinc-900 ring-[#6366F1] border-transparent scale-105' 
                       : 'border-gray-200 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500'
                   }`}
                   style={{
@@ -515,7 +515,7 @@ export const StylePanel = () => {
                   handleCustomHexSubmit('stroke', e.target.value);
                 }}
                 placeholder="#000000"
-                className="w-full pl-10 pr-2 py-1 text-xs font-mono font-medium border border-gray-200 dark:border-zinc-700 rounded-xl bg-gray-50 dark:bg-zinc-800/80 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-[#FF5A36] focus:ring-1 focus:ring-[#FF5A36] transition-colors"
+                className="w-full pl-10 pr-2 py-1 text-xs font-mono font-medium border border-gray-200 dark:border-zinc-700 rounded-xl bg-gray-50 dark:bg-zinc-800/80 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
               />
             </div>
             
@@ -544,7 +544,7 @@ export const StylePanel = () => {
               <label className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider jetbrains-mono">
                 Stroke Width
               </label>
-              <span className="text-xs font-bold text-[#FF5A36] jetbrains-mono">
+              <span className="text-xs font-bold text-[#6366F1] jetbrains-mono">
                 {currentStrokeWidth}px
               </span>
             </div>
@@ -560,7 +560,7 @@ export const StylePanel = () => {
                     onClick={() => handleWidthChange(width)}
                     className={`py-1.5 text-xs font-semibold rounded-lg transition-all flex flex-col items-center justify-center gap-1 ${
                       isActive
-                        ? 'bg-[#FF5A36] text-white shadow-xs'
+                        ? 'bg-[#6366F1] text-white shadow-xs'
                         : 'text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-zinc-700 hover:text-gray-900 dark:hover:text-white'
                     }`}
                   >
@@ -588,7 +588,7 @@ export const StylePanel = () => {
                 max="30"
                 value={currentStrokeWidth}
                 onChange={(e) => handleWidthChange(Number(e.target.value))}
-                className="flex-1 accent-[#FF5A36] h-1.5 bg-gray-200 dark:bg-zinc-700 rounded-lg cursor-pointer"
+                className="flex-1 accent-[#6366F1] h-1.5 bg-gray-200 dark:bg-zinc-700 rounded-lg cursor-pointer"
               />
 
               <button
@@ -616,7 +616,7 @@ export const StylePanel = () => {
                       onClick={() => handleStrokeStyleChange(id)}
                       className={`py-1 text-xs font-medium rounded-lg transition-all flex flex-col items-center justify-center gap-1 ${
                         isActive
-                          ? 'bg-[#FF5A36] text-white shadow-xs'
+                          ? 'bg-[#6366F1] text-white shadow-xs'
                           : 'text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-zinc-700'
                       }`}
                     >
@@ -664,7 +664,7 @@ export const StylePanel = () => {
                     onClick={() => handleColorChange('fill', c)}
                     className={`relative w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-150 group hover:scale-105 ${
                       isSelected 
-                        ? 'ring-2 ring-offset-2 dark:ring-offset-zinc-900 ring-[#FF5A36] border-transparent scale-105' 
+                        ? 'ring-2 ring-offset-2 dark:ring-offset-zinc-900 ring-[#6366F1] border-transparent scale-105' 
                         : 'border-gray-200 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500'
                     }`}
                     style={{
@@ -703,7 +703,7 @@ export const StylePanel = () => {
                   handleCustomHexSubmit('fill', e.target.value);
                 }}
                 placeholder="#FFFFFF"
-                className="w-full pl-10 pr-2 py-1 text-xs font-mono font-medium border border-gray-200 dark:border-zinc-700 rounded-xl bg-gray-50 dark:bg-zinc-800/80 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-[#FF5A36] focus:ring-1 focus:ring-[#FF5A36] transition-colors"
+                className="w-full pl-10 pr-2 py-1 text-xs font-mono font-medium border border-gray-200 dark:border-zinc-700 rounded-xl bg-gray-50 dark:bg-zinc-800/80 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
               />
             </div>
             
@@ -733,7 +733,7 @@ export const StylePanel = () => {
             <label className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider jetbrains-mono">
               Corner Radius
             </label>
-            <span className="text-xs font-bold text-[#FF5A36] jetbrains-mono">
+            <span className="text-xs font-bold text-[#6366F1] jetbrains-mono">
               {currentCornerRadius}px
             </span>
           </div>
@@ -748,7 +748,7 @@ export const StylePanel = () => {
                   onClick={() => handleCornerRadiusChange(radius)}
                   className={`py-1 text-xs font-medium rounded-lg transition-all ${
                     isActive
-                      ? 'bg-[#FF5A36] text-white shadow-xs'
+                      ? 'bg-[#6366F1] text-white shadow-xs'
                       : 'text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-zinc-700'
                   }`}
                 >
@@ -764,7 +764,7 @@ export const StylePanel = () => {
             max="40"
             value={currentCornerRadius}
             onChange={(e) => handleCornerRadiusChange(Number(e.target.value))}
-            className="w-full accent-[#FF5A36] h-1.5 bg-gray-200 dark:bg-zinc-700 rounded-lg cursor-pointer"
+            className="w-full accent-[#6366F1] h-1.5 bg-gray-200 dark:bg-zinc-700 rounded-lg cursor-pointer"
           />
         </div>
       )}
@@ -775,7 +775,7 @@ export const StylePanel = () => {
           <label className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider jetbrains-mono">
             Opacity
           </label>
-          <span className="text-xs font-bold text-[#FF5A36] jetbrains-mono">
+          <span className="text-xs font-bold text-[#6366F1] jetbrains-mono">
             {currentOpacity}%
           </span>
         </div>
@@ -791,7 +791,7 @@ export const StylePanel = () => {
                 onClick={() => handleOpacityChange(pct / 100)}
                 className={`py-1 text-xs font-medium rounded-lg transition-all ${
                   isActive
-                    ? 'bg-[#FF5A36] text-white shadow-xs'
+                    ? 'bg-[#6366F1] text-white shadow-xs'
                     : 'text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-zinc-700'
                 }`}
               >
@@ -807,7 +807,7 @@ export const StylePanel = () => {
           max="100"
           value={currentOpacity}
           onChange={(e) => handleOpacityChange(Number(e.target.value) / 100)}
-          className="w-full accent-[#FF5A36] h-1.5 bg-gray-200 dark:bg-zinc-700 rounded-lg cursor-pointer"
+          className="w-full accent-[#6366F1] h-1.5 bg-gray-200 dark:bg-zinc-700 rounded-lg cursor-pointer"
         />
       </div>
 

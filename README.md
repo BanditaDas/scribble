@@ -53,7 +53,7 @@ Scribble is a lightweight whiteboard/design tool built to explore canvas-based i
 
 ## Design
 
-Scribble uses a graphite/fog neutral palette with a single signal-orange (`#FF5A36`) accent, a floating rounded toolbar, and a dot-grid background — aiming for a clean, focused, tool-like feel rather than a generic app UI.
+Scribble uses a graphite/fog neutral palette with a soothing soft indigo (`#6366F1`) accent, a floating rounded toolbar, and a dot-grid background — aiming for a clean, focused, tool-like feel rather than a generic app UI.
 
 ## Getting Started
 
