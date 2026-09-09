@@ -40,6 +40,10 @@ export const LineSelectionBox = ({ shape, onChange, theme }: LineSelectionBoxPro
         stroke={handleStroke}
         strokeWidth={2}
         draggable
+        dragBoundFunc={(pos) => ({
+          x: Math.max(0, Math.min(window.innerWidth, pos.x)),
+          y: Math.max(0, Math.min(window.innerHeight, pos.y)),
+        })}
         onDragStart={onDragStartHandle}
         onDragMove={handleDrag(0, false)}
         onDragEnd={handleDrag(0, true)}
@@ -52,6 +56,10 @@ export const LineSelectionBox = ({ shape, onChange, theme }: LineSelectionBoxPro
         stroke={handleStroke}
         strokeWidth={2}
         draggable
+        dragBoundFunc={(pos) => ({
+          x: Math.max(0, Math.min(window.innerWidth, pos.x)),
+          y: Math.max(0, Math.min(window.innerHeight, pos.y)),
+        })}
         onDragStart={onDragStartHandle}
         onDragMove={handleDrag(2, false)}
         onDragEnd={handleDrag(2, true)}

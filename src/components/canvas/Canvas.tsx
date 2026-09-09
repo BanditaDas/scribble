@@ -3,7 +3,7 @@ import { Stage, Layer, Rect } from 'react-konva';
 import { useCanvasStore, Shape } from '../../store/canvasStore';
 import { TOOLS } from '../../lib/constants';
 import { createShape } from '../../lib/shapeFactory';
-import { shapeIntersectsEraser, shapeIntersectsBox, BoundingBox } from '../../lib/geometry';
+import { shapeIntersectsEraser, shapeIntersectsBox, BoundingBox, getClampedPosition } from '../../lib/geometry';
 import { ShapeRenderer } from './ShapeRenderer';
 import { SelectionBox } from './SelectionBox';
 import { LineSelectionBox } from './LineSelectionBox';
@@ -131,7 +131,9 @@ export const Canvas = () => {
   const handleShapeDragEnd = (e: any, shape: Shape) => {
     const currentSelectedIds = useCanvasStore.getState().selectedIds;
     if (currentSelectedIds.length <= 1) {
-      updateShape(shape.id, { x: e.target.x(), y: e.target.y() }, true);
+      const clamped = getClampedPosition(shape, e.target.x(), e.target.y(), window.innerWidth, window.innerHeight);
+      e.target.position(clamped);
+      updateShape(shape.id, { x: clamped.x, y: clamped.y }, true);
       return;
     }
 
@@ -147,11 +149,15 @@ export const Canvas = () => {
       const stage = stageRef.current;
       if (!stage) return;
       const currentSelected = useCanvasStore.getState().selectedIds;
+      const allShapes = useCanvasStore.getState().shapes;
       const updates: Array<{ id: string; x: number; y: number }> = [];
       for (const id of currentSelected) {
         const node = stage.findOne(`#${id}`);
-        if (node) {
-          updates.push({ id, x: node.x(), y: node.y() });
+        const shp = allShapes.find((s) => s.id === id);
+        if (node && shp) {
+          const clamped = getClampedPosition(shp, node.x(), node.y(), window.innerWidth, window.innerHeight);
+          node.position(clamped);
+          updates.push({ id, x: clamped.x, y: clamped.y });
         }
       }
       if (updates.length > 0) {

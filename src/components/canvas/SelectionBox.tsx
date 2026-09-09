@@ -101,6 +101,7 @@ export const SelectionBox = ({ selectedIds, selectedId }: SelectionBoxProps) => 
       anchorCornerRadius={2}
       borderStroke="#FF5A36"
       borderDash={[4, 4]}
+      shouldOverdrawWholeArea={true}
     />
   );
 };

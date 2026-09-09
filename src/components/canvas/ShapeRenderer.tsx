@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { Rect, Ellipse, Line, Arrow, Text } from 'react-konva';
 import { Shape, useCanvasStore } from '../../store/canvasStore';
 import { TOOLS, DEFAULT_PROPS } from '../../lib/constants';
+import { getClampedPosition } from '../../lib/geometry';
 
 interface ShapeRendererProps {
   shape: Shape;
@@ -55,11 +56,22 @@ export const ShapeRenderer = ({
     dash,
     lineCap,
     lineJoin,
-    draggable: isSelected && activeTool === TOOLS.SELECT,
+    draggable: activeTool === TOOLS.SELECT,
+    dragBoundFunc: (pos: { x: number; y: number }) => {
+      return getClampedPosition(shape, pos.x, pos.y, window.innerWidth, window.innerHeight);
+    },
     perfectDrawEnabled: false,
     shadowForStrokeEnabled: false,
     onClick: (e: any) => onSelect(e),
     onTap: (e: any) => onSelect(e),
+    onDragStart: (e: any) => {
+      if (activeTool === TOOLS.SELECT) {
+        const { selectedIds, setSelectedId } = useCanvasStore.getState();
+        if (!selectedIds.includes(shape.id)) {
+          setSelectedId(shape.id);
+        }
+      }
+    },
     onMouseDown: (e: any) => {
       if (activeTool === TOOLS.SELECT) {
         const { selectedIds, setSelectedId } = useCanvasStore.getState();
@@ -83,7 +95,7 @@ export const ShapeRenderer = ({
     onMouseEnter: (e: any) => {
       if (activeTool === TOOLS.SELECT) {
         const container = e.target.getStage()?.container();
-        if (container) container.style.cursor = isSelected ? 'move' : 'pointer';
+        if (container) container.style.cursor = 'move';
       }
     },
     onMouseLeave: (e: any) => {
@@ -174,6 +186,20 @@ export const ShapeRenderer = ({
           width={absW}
           height={absH}
           cornerRadius={shape.cornerRadius || 0}
+          hitFunc={(context, shapeNode) => {
+            context.beginPath();
+            const radius = shape.cornerRadius || 0;
+            const width = shapeNode.width();
+            const height = shapeNode.height();
+            if (radius > 0 && typeof (context as any).roundRect === 'function') {
+              (context as any).roundRect(0, 0, width, height, radius);
+            } else {
+              context.rect(0, 0, width, height);
+            }
+            context.closePath();
+            context.fillStrokeShape(shapeNode);
+            (context as any)._context?.fill();
+          }}
         />
       );
     }
@@ -196,6 +222,20 @@ export const ShapeRenderer = ({
           radiusY={radiusY}
           offsetX={-radiusX}
           offsetY={-radiusY}
+          hitFunc={(context, shapeNode) => {
+            const rx = (shapeNode as any).radiusX();
+            const ry = (shapeNode as any).radiusY();
+            context.beginPath();
+            context.save();
+            if (rx !== ry && rx > 0) {
+              context.scale(1, ry / rx);
+            }
+            context.arc(0, 0, rx, 0, Math.PI * 2, false);
+            context.restore();
+            context.closePath();
+            context.fillStrokeShape(shapeNode);
+            (context as any)._context?.fill();
+          }}
         />
       );
     }
@@ -238,10 +278,11 @@ export const ShapeRenderer = ({
           fill={textFill}
           stroke={undefined}
           strokeWidth={0}
+          hitStrokeWidth={12}
           padding={4}
           lineHeight={1.2}
           visible={!isEditing}
-          draggable={isSelected && !isEditing && activeTool === TOOLS.SELECT}
+          draggable={activeTool === TOOLS.SELECT && !isEditing}
         />
       );
     default:

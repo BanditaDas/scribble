@@ -326,3 +326,76 @@ export const shapeIntersectsBox = (
   return false;
 };
 
+export const getClampedPosition = (
+  shape: {
+    type: string;
+    width?: number;
+    height?: number;
+    points?: number[];
+    fontSize?: number;
+    text?: string;
+  },
+  newX: number,
+  newY: number,
+  stageWidth: number,
+  stageHeight: number,
+  minVisible = 24
+): { x: number; y: number } => {
+  if (shape.type === 'rectangle' || shape.type === 'ellipse') {
+    const w = Math.abs(shape.width || 0);
+    const h = Math.abs(shape.height || 0);
+    const minVisibleX = Math.min(minVisible, Math.max(10, w * 0.3));
+    const minVisibleY = Math.min(minVisible, Math.max(10, h * 0.3));
+
+    return {
+      x: Math.max(-w + minVisibleX, Math.min(stageWidth - minVisibleX, newX)),
+      y: Math.max(-h + minVisibleY, Math.min(stageHeight - minVisibleY, newY)),
+    };
+  }
+
+  if (shape.type === 'text') {
+    const fontSize = shape.fontSize || 20;
+    const textLen = Math.max(1, (shape.text || ' ').length);
+    const textW = Math.max(40, textLen * fontSize * 0.65);
+    const textH = Math.max(fontSize * 1.3, 24);
+    const minVisibleX = Math.min(minVisible, Math.max(10, textW * 0.3));
+    const minVisibleY = Math.min(20, Math.max(10, textH * 0.3));
+
+    return {
+      x: Math.max(-textW + minVisibleX, Math.min(stageWidth - minVisibleX, newX)),
+      y: Math.max(-textH + minVisibleY, Math.min(stageHeight - minVisibleY, newY)),
+    };
+  }
+
+  if (shape.type === 'line' || shape.type === 'arrow' || shape.type === 'pen') {
+    const pts = shape.points || [];
+    if (pts.length < 2) return { x: newX, y: newY };
+
+    let minPtX = Infinity;
+    let maxPtX = -Infinity;
+    let minPtY = Infinity;
+    let maxPtY = -Infinity;
+
+    for (let i = 0; i < pts.length; i += 2) {
+      const px = pts[i];
+      const py = pts[i + 1];
+      if (px < minPtX) minPtX = px;
+      if (px > maxPtX) maxPtX = px;
+      if (py < minPtY) minPtY = py;
+      if (py > maxPtY) maxPtY = py;
+    }
+
+    const spanX = Math.max(20, maxPtX - minPtX);
+    const spanY = Math.max(20, maxPtY - minPtY);
+    const minVisibleX = Math.min(minVisible, Math.max(10, spanX * 0.3));
+    const minVisibleY = Math.min(minVisible, Math.max(10, spanY * 0.3));
+
+    return {
+      x: Math.max(minVisibleX - maxPtX, Math.min(stageWidth - minPtX - minVisibleX, newX)),
+      y: Math.max(minVisibleY - maxPtY, Math.min(stageHeight - minPtY - minVisibleY, newY)),
+    };
+  }
+
+  return { x: newX, y: newY };
+};
+
