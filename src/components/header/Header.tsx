@@ -33,8 +33,9 @@ export const Header = () => {
 
   return (
     <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-6 py-4 pointer-events-none">
-      <div className="flex items-center gap-3 pointer-events-auto bg-white dark:bg-zinc-800 rounded-lg px-4 py-2 shadow-sm border border-gray-200 dark:border-zinc-700 transition-colors">
-        <h1 className="font-semibold text-gray-900 dark:text-gray-100 jetbrains-mono">Scribble</h1>
+      <div className="flex items-center gap-2.5 pointer-events-auto bg-white dark:bg-zinc-800 rounded-lg px-3 py-2 shadow-sm border border-gray-200 dark:border-zinc-700 transition-colors">
+        <img src="/favicon.svg" alt="Scribble logo" className="w-5 h-5 rounded-md shadow-xs select-none" />
+        <h1 className="font-semibold text-gray-900 dark:text-gray-100 jetbrains-mono text-sm tracking-tight">Scribble</h1>
       </div>
 
       <div className="flex items-center gap-2 pointer-events-auto">
